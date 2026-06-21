@@ -1,0 +1,25 @@
+{
+    "name": "mrsamase/multivendor-ecommerce",
+    "description": "Multi-vendor ecommerce for mrsamase platform",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "helpers.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Okeke Chukwuebuka",
+            "email": "chukwuebukaokeke09@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.6",
+        "phpmailer/phpmailer": "^6.11",
+        "cloudinary/cloudinary_php": "^3.1"
+    }
+}

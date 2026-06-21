@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /public/
+
+# Route API and frontend requests to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# Block access to sensitive files
+RewriteCond %{REQUEST_URI} \.(env|inc|bak|sql|zip|tar|gz|log|config|ini|sh|bat|ps1)$ [NC]
+RewriteRule .* - [F,L]
+
+# Disable directory listing
+Options -Indexes
