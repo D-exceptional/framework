@@ -36,7 +36,7 @@ It has powered an e-commerce, job hunting and portfolio websites.
 - Ensured seamless interaction amongst the various components
 
 ## Local Setup Instructions
-1. Clone the repo: git clone https://github.com/d-exceptional/job-platform-demo.git
+1. Clone the repo: git clone https://github.com/D-exceptional/framework.git
 8. Run composer install (if PHP/Laravel)
 
 ## Why I Built This
