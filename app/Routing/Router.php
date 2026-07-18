@@ -1,14 +1,16 @@
 <?php
 namespace App\Routing;
 
-use App\Core\Container;
+use App\Core\Application;
 use App\Http\Request;
 use App\Exceptions\MiddlewareException;
 use App\Exceptions\RouteNotFoundException;
 
 class Router
 {
+    protected Application $app;
     protected Container $container;
+
 
     protected array $routes = [
         'static'  => [],
@@ -17,9 +19,9 @@ class Router
     protected string $groupPrefix = '';
     protected array $groupMiddlewares = [];
 
-    public function __construct(Container $container)
+    public function __construct(Application $app)
     {
-        $this->container = $container;
+        $this->container = $app->container();
     }
 
     // =========================================
