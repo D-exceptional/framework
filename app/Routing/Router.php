@@ -11,7 +11,6 @@ class Router
     protected Application $app;
     protected Container $container;
 
-
     protected array $routes = [
         'static'  => [],
         'dynamic' => []
