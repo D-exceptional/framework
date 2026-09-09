@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http;
 
 class Request
@@ -24,7 +26,7 @@ class Request
         $this->files   = $_FILES ?? [];
         $this->headers = $this->parseHeaders();
         $this->body    = $this->parseBody();
-        $this->user    = null; // You can set this later based on your authentication logic     
+        $this->user    = null; // Set this later based on authentication logic     
     }
 
     // =========================================
@@ -127,6 +129,17 @@ class Request
         $this->routeParams = $params;
     }
 
+    /**
+     * Get all route parameters.
+     */
+    public function params(): array
+    {
+        return $this->routeParams;
+    }
+
+    /**
+     * Get a route parameter.
+     */
     public function param(
         string $key, 
         mixed $default = null
@@ -135,9 +148,15 @@ class Request
         return $this->routeParams[$key] ?? $default;
     }
 
-    public function params(): array
-    {
-        return $this->routeParams;
+    /**
+     * Get a route parameter.
+     */
+    public function route(
+        string $key, 
+        mixed $default = null
+    ): mixed {
+
+        return $this->routeParams[$key] ?? $default;
     }
 
     // =========================================
@@ -179,8 +198,13 @@ class Request
 
     public function expectsJson(): bool
     {
-        $accept = $this->header('Accept');
-        return str_contains($accept, 'application/json');
+        return str_starts_with(
+            $this->uri(),
+            '/api'
+        ) || str_contains(
+            $this->header('Accept', ''),
+            'application/json'
+        );
     }
 
     public function isMethod(
@@ -190,29 +214,30 @@ class Request
         return strtoupper($this->method()) === strtoupper($method);
     }
 
-    // =========================================
-    // INTERNAL HELPERS
-    // =========================================
     protected function getUri(): string
     {
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $uri = parse_url(
+            $_SERVER['REQUEST_URI'] ?? '/',
+            PHP_URL_PATH
+        );
 
-        // Extract Only The Part Starting With /api/ (if present), otherwise use root '/'
-        if (preg_match('#/api(/.*)?$#', $uri, $matches)) {
-            $uri = rtrim($matches[0], '/');
-        } else {
-            $uri = '/';
+        $basePath = rtrim(config('app.base_path', ''), '/');
+
+        if (
+            $basePath !== '' &&
+            str_starts_with($uri, $basePath)
+        ) {
+            $uri = substr($uri, strlen($basePath));
         }
 
-        // Normalize URI (remove trailing slash, but ensure root is '/')
-        return rtrim($uri, '/') ?: '/';
+        $uri = '/' . trim($uri, '/');
+
+        return $uri === '//' ? '/' : $uri;
     }
 
     protected function parseBody(): array
     {
-        $method = strtoupper(
-            $_SERVER['REQUEST_METHOD'] ?? 'GET'
-        );
+        $method = $this->method();
 
         // =========================================
         // GET REQUESTS

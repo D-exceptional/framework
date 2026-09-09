@@ -1,44 +1,193 @@
 <?php
 
-// =========================================
-// DEFINE BASE PATH
-// =========================================
+declare(strict_types=1);
+
+/*
+|--------------------------------------------------------------------------
+| Base Path
+|--------------------------------------------------------------------------
+*/
+
 define('BASE_PATH', dirname(__DIR__, 2));
 
-// =========================================
-// IMPORT ROUTER CLASS
-// =========================================
+/*
+|--------------------------------------------------------------------------
+| Imports
+|--------------------------------------------------------------------------
+*/
+
 use App\Routing\Router;
 
-// =========================================
-// AUTLOAD & BOOT
-// =========================================
-require_once BASE_PATH . '/bootstrap.php';
+/*
+|--------------------------------------------------------------------------
+| Bootstrap Framework
+|--------------------------------------------------------------------------
+*/
 
-// =========================================
-// INITIALIZE ROUTER
-// =========================================
+require_once BASE_PATH . '/bootstrap/bootstrap.php';
+
+/*
+|--------------------------------------------------------------------------
+| Resolve Router
+|--------------------------------------------------------------------------
+*/
+
 $router = $app->container()->get(Router::class);
 
-// =========================================
-// LOAD API ROUTES
-// =========================================
-require_once BASE_PATH . '/routes/api.php';
+/*
+|--------------------------------------------------------------------------
+| Load Route Collections
+|--------------------------------------------------------------------------
+*/
 
-// =========================================
-// EXPORT COMPILED ROUTES TO CACHE FILE
-// =========================================
-$routes = $router->getRoutes();
+$routeCollections = config(
+    'router.collections',
+    ['api', 'web']
+);
 
-$cacheFile = BASE_PATH . '/storage/cache/route/routes.php';
+$totalCollections = 0;
 
-if (!is_dir(dirname($cacheFile))) {
-    mkdir(dirname($cacheFile), 0777, true);
+foreach ($routeCollections as $collection) {
+
+    $file = BASE_PATH . "/routes/{$collection}.php";
+
+    if (!file_exists($file)) {
+
+        echo "Skipping missing route file: {$collection}.php\n";
+
+        continue;
+    }
+
+    $router->setCollection($collection);
+
+    require $file;
+
+    $totalCollections++;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Reset Active Collection Tracker
+|--------------------------------------------------------------------------
+*/
+
+$router->resetCollection();
+
+
+/*
+|--------------------------------------------------------------------------
+| Convert Route Objects To Cacheable Arrays
+|--------------------------------------------------------------------------
+*/
+
+$cacheRoutes = $router->toCacheArray();
+
+/*
+|--------------------------------------------------------------------------
+| Cache Location
+|--------------------------------------------------------------------------
+*/
+
+$cacheDirectory = BASE_PATH . '/storage/framework/cache/route';
+
+$cacheFile = $cacheDirectory . '/routes.php';
+
+/*
+|--------------------------------------------------------------------------
+| Create Cache Directory
+|--------------------------------------------------------------------------
+*/
+
+if (!is_dir($cacheDirectory)) {
+
+    mkdir(
+        $cacheDirectory,
+        0777,
+        true
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Write Route Cache
+|--------------------------------------------------------------------------
+*/
+
+$cacheContents =
+    "<?php\n\n" .
+    "return " .
+    var_export($cacheRoutes, true) .
+    ";\n";
 
 file_put_contents(
     $cacheFile,
-    "<?php return " . var_export($routes, true) . ";"
+    $cacheContents,
+    LOCK_EX
 );
 
-echo "Routes cached successfully\n";
+/*
+|--------------------------------------------------------------------------
+| Statistics
+|--------------------------------------------------------------------------
+*/
+
+$totalRoutes = 0;
+
+foreach ($cacheRoutes as $collection => $routeSet) {
+
+    $static = 0;
+    $dynamic = 0;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Static Count
+    |--------------------------------------------------------------------------
+    */
+
+    foreach ($routeSet['static'] ?? [] as $methodRoutes) {
+
+        $static += count($methodRoutes);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dynamic Count
+    |--------------------------------------------------------------------------
+    */
+
+    foreach ($routeSet['dynamic'] ?? [] as $methodRoutes) {
+
+        foreach ($methodRoutes as $group) {
+
+            $dynamic += count($group);
+        }
+    }
+
+    $count = $static + $dynamic;
+
+    $totalRoutes += $count;
+
+    echo sprintf(
+        "%-10s : %d routes\n",
+        strtoupper($collection),
+        $count
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Summary
+|--------------------------------------------------------------------------
+*/
+
+echo "----------------------------------------\n";
+
+echo "Collections : {$totalCollections}\n";
+
+echo "Total Routes: {$totalRoutes}\n";
+
+echo "----------------------------------------\n";
+
+echo "Route cache generated successfully.\n";
+
+echo "Cache File : {$cacheFile}\n";

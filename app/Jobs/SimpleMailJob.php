@@ -1,24 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
-use App\Core\Container;
 use App\Contracts\JobInterface;
 use App\Mail\MailManager;
 
 class SimpleMailJob implements JobInterface
-{
-    public MailManager $mailer;
-    
+{    
     public string $subject;
     public string $email;
     public string $message;
 
     public function __construct(
-        MailManager $mailer
-    ) {
-        $this->mailer = $mailer;
-    }
+        public MailManager $mailer
+    ) {}
 
     public function setPayload(array $data): void
     {

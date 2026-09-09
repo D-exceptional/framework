@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Contracts;
 
 interface SessionInterface
@@ -8,27 +10,19 @@ interface SessionInterface
 
     public function regenerate(): void;
 
-    public function login(array $user): void;
+    public function basicLogin(array $user): void;
 
-    public function validate(
-        int $absoluteMax = 7200,
-        int $idleTimeout = 1800
-    ): bool;
+    public function jwtLogin(array $user): array;
+
+    public function validate(int $absoluteMax = 7200, int $idleTimeout = 1800): bool;
 
     public function destroy(): void;
 
-    public function store(
-        string $key,
-        mixed $value
-    ): void;
+    public function store(string $key, mixed $value): void;
 
-    public function retrieve(
-        string $key
-    ): mixed;
+    public function retrieve(string $key): mixed;
 
-    public function terminate(
-        string $key
-    ): void;
+    public function terminate(string $key): void;
 
     public function check(): bool;
 
@@ -38,19 +32,13 @@ interface SessionInterface
 
     public function role(): ?string;
 
-    public function authorize(
-        string $role
-    ): bool;
+    public function authorize(string $role): bool;
 
     public function token(): ?string;
 
     public function tokenSet(): bool;
 
-    public function validateCsrf(
-        ?string $token
-    ): bool;
+    public function validateCsrf(?string $token): bool;
 
-    public function redirect(
-        string $url
-    ): void;
+    public function redirect(string $url): void;
 }

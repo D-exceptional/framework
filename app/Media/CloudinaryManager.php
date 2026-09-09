@@ -1,83 +1,160 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Media;
 
 use Cloudinary\Cloudinary;
-use Exception;
 
 class CloudinaryManager
 {
     protected Cloudinary $cloudinary;
+    protected bool $isLocal;
     protected string $logFile;
     protected string $pemFile;
-    protected bool $isLocal;
 
     public function __construct()
     {
-        $this->cloudinary = new Cloudinary(config('cloudinary'));
-        $this->isLocal    = in_array($_SERVER['SERVER_NAME'] ?? 'localhost', ['localhost', '127.0.0.1']) || PHP_SAPI === 'cli';
-        $this->logFile    = dirname(__DIR__, 2) . '/storage/logs/media-manager.log';
+        $config = config('cloudinary');
 
-        if (!file_exists(dirname($this->logFile))) {
-            mkdir(dirname($this->logFile), 0777, true);
-        }
+        $this->cloudinary = new Cloudinary($config);
 
-        $this->pemFile = $this->isLocal ? "C:/wamp64/www/projects/demos/jpbspot/storage/cacert.pem" : dirname(__DIR__, 2) . "/storage/cacert.pem";
-        
-        if (!file_exists($this->pemFile)) {
-            $this->log("PEM file not found at {$this->pemFile}");
-        }
+        $this->initialize();
     }
 
     // =========================================
-    // LOG CLOUDINARY ERRORS
+    // INITIALIZE CLOUDINARY SETUP
     // =========================================
-    protected function log(
-        string $message
-    ): void {
+    public function initialize(): void
+    {
+        $this->isLocal =
+            in_array(
+                $_SERVER['SERVER_NAME'] ?? 'localhost',
+                ['localhost', '127.0.0.1'],
+                true
+            )
+            || PHP_SAPI === 'cli';
 
-        $timestamp = date('Y-m-d H:i:s');
-        error_log("[{$timestamp}] {$message}\n", 3, $this->logFile);
+        $this->logFile =
+            dirname(__DIR__, 2) .
+            '/storage/logs/media-manager.log';
+
+        $this->pemFile =
+            dirname(__DIR__, 2) .
+            '/storage/cacert.pem';
+
+        $this->writeLog(
+            "CloudinaryManager initialized. Log file: {$this->logFile}"
+        );
+
+        if (!file_exists($this->pemFile)) {
+            $this->writeLog(
+                "PEM file not found at {$this->pemFile}"
+            );
+        }
     }
 
     // =========================================
     // DETECT FILE TYPE
     // =========================================
-    public function detect(
-        string $url
-    ): string {
-
-        $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
-
-        if (in_array($ext, ['jpg','jpeg','png','gif','webp'])) return 'image';
-        if (in_array($ext, ['mp4','webm','avi','mov','mkv'])) return 'video';
-        return 'raw';
-    }
-
-    // =========================================
-    // EXTRACT FILE NAME
-    // =========================================
-    public function extract(
+    private function detect(
         string $url
     ): string {
 
         $path = parse_url($url, PHP_URL_PATH);
-        $parts = explode('/', trim($path, '/'));
-        $uploadIndex = array_search('upload', $parts);
-        if ($uploadIndex === false) return '';
 
-        $publicIdParts = array_slice($parts, $uploadIndex + 1);
+        $ext = strtolower(
+            pathinfo($path, PATHINFO_EXTENSION)
+        );
 
-        if (isset($publicIdParts[0]) && preg_match('/^v\d+$/', $publicIdParts[0])) {
+        if (in_array($ext, [
+            'jpg',
+            'jpeg',
+            'png',
+            'gif',
+            'webp'
+        ], true)) {
+            return 'image';
+        }
+
+        if (in_array($ext, [
+            'mp4',
+            'webm',
+            'avi',
+            'mov',
+            'mkv'
+        ], true)) {
+            return 'video';
+        }
+
+        return 'raw';
+    }
+
+    // =========================================
+    // EXTRACT PUBLIC ID
+    // =========================================
+    private function extract(
+        string $url
+    ): string {
+
+        $path = parse_url($url, PHP_URL_PATH);
+
+        if (!$path) {
+            return '';
+        }
+
+        $parts = explode(
+            '/',
+            trim($path, '/')
+        );
+
+        $uploadIndex = array_search(
+            'upload',
+            $parts,
+            true
+        );
+
+        if ($uploadIndex === false) {
+            return '';
+        }
+
+        $publicIdParts = array_slice(
+            $parts,
+            $uploadIndex + 1
+        );
+
+        // Remove Cloudinary version
+        if (
+            isset($publicIdParts[0]) &&
+            preg_match(
+                '/^v\d+$/',
+                $publicIdParts[0]
+            )
+        ) {
             array_shift($publicIdParts);
         }
 
+        if (empty($publicIdParts)) {
+            return '';
+        }
+
         $lastPart = array_pop($publicIdParts);
-        $filename = pathinfo($lastPart, PATHINFO_FILENAME);
+
+        $filename = pathinfo(
+            $lastPart,
+            PATHINFO_FILENAME
+        );
+
+        if ($filename === '') {
+            return '';
+        }
 
         $publicIdParts[] = $filename;
 
-        return implode('/', $publicIdParts);
+        return implode(
+            '/',
+            $publicIdParts
+        );
     }
 
     // =========================================
@@ -85,22 +162,32 @@ class CloudinaryManager
     // =========================================
     public function delete(
         string $url
-    ): array {
+    ): void {
 
-        $this->log("Deleting: {$url}");
+        $this->writeLog(
+            "Deleting: {$url}"
+        );
 
         $resourceType = $this->detect($url);
         $publicId     = $this->extract($url);
 
-        if (empty($publicId)) {
-            return ['status' => 'error', 'message' => 'Invalid public_id from URL'];
+        if ($publicId === '') {
+            $this->writeLog(
+                "Invalid public_id from URL: {$url}"
+            );
+
+            throw new \RuntimeException(
+                'Unable to extract Cloudinary public ID from URL.'
+            );
         }
 
         $options = [
             'resource_type' => $resourceType
         ];
 
-        // SSL handling
+        // =========================================
+        // SSL HANDLING
+        // =========================================
         if ($this->isLocal) {
             $options['curl_options'] = [
                 CURLOPT_SSL_VERIFYPEER => false,
@@ -108,7 +195,13 @@ class CloudinaryManager
             ];
         } else {
             if (!file_exists($this->pemFile)) {
-                return ['status' => 'error', 'message' => 'SSL certificate missing'];
+                $this->writeLog(
+                    "SSL certificate missing: {$this->pemFile}"
+                );
+
+                throw new \RuntimeException(
+                    'SSL certificate not found.'
+                );
             }
 
             $options['curl_options'] = [
@@ -119,25 +212,37 @@ class CloudinaryManager
         }
 
         try {
-            // UploadApi delete (single asset)
             $result = $this->cloudinary
                 ->uploadApi()
                 ->destroy($publicId, $options);
 
-            $this->log("Delete result: " . json_encode($result));
+            $this->writeLog(
+                "Delete result: " .
+                json_encode($result)
+            );
 
-            if (($result['result'] ?? null) === 'ok') {
-                return ['status' => 'success', 'message' => 'File deleted'];
+            if (
+                ($result['result'] ?? null) === 'ok'
+            ) {
+                $this->writeLog(
+                    "File deleted successfully: {$publicId}"
+                );
+
+                return;
             }
 
-            return [
-                'status'  => 'warning',
-                'message' => $result['result'] ?? 'Delete not confirmed'
-            ];
+            $this->writeLog(
+                "File deletion not confirmed: " .
+                json_encode($result)
+            );
 
-        } catch (Exception $e) {
-            $this->log("Error: " . $e->getMessage());
-            return ['status' => 'error', 'message' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            $this->writeLog(
+                "Error deleting {$publicId}: " .
+                $e->getMessage()
+            );
+
+            throw $e;
         }
     }
 
@@ -146,8 +251,8 @@ class CloudinaryManager
     // =========================================
     public function deleteBulk(
         array $urls
-    ): array {
-
+    ): void {
+        
         $grouped = [
             'image' => [],
             'video' => [],
@@ -156,43 +261,91 @@ class CloudinaryManager
 
         foreach ($urls as $url) {
             $publicId = $this->extract($url);
-            if (!$publicId) continue;
+
+            if ($publicId === '') {
+                $this->writeLog(
+                    "Unable to extract public ID: {$url}"
+                );
+
+                continue;
+            }
 
             $type = $this->detect($url);
+
             $grouped[$type][] = $publicId;
         }
 
-        return $this->deleteGrouped($grouped);
+        $this->deleteGrouped($grouped);
     }
 
     // =========================================
     // DELETE GROUPED FILES
     // =========================================
-    protected function deleteGrouped(
+    private function deleteGrouped(
         array $grouped
-    ): array {
+    ): void {
 
         $results = [];
 
         foreach ($grouped as $type => $publicIds) {
-            if (empty($publicIds)) continue;
+            if (empty($publicIds)) {
+                continue;
+            }
 
             try {
-                $res = $this->cloudinary
+                $result = $this->cloudinary
                     ->adminApi()
-                    ->deleteAssets($publicIds, [
-                        'resource_type' => $type
-                    ]);
+                    ->deleteAssets(
+                        $publicIds,
+                        [
+                            'resource_type' => $type
+                        ]
+                    );
 
-                $results[$type] = $res;
+                $results[$type] = $result;
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $results[$type] = [
                     'error' => $e->getMessage()
                 ];
             }
         }
 
-        return $results;
+        $this->writeLog(
+            "Cloudinary bulk delete operation results: " .
+            json_encode($results)
+        );
+    }
+
+    // =========================================
+    // WRITE MEDIA LOG
+    // =========================================
+    private function writeLog(
+        mixed $data
+    ): void {
+
+        $timestamp = date('Y-m-d H:i:s');
+
+        $message = is_array($data)
+            ? json_encode($data, JSON_PRETTY_PRINT)
+            : (string) $data;
+
+        $directory = dirname($this->logFile);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        $result = file_put_contents(
+            $this->logFile,
+            "[{$timestamp}] {$message}" . PHP_EOL,
+            FILE_APPEND | LOCK_EX
+        );
+
+        if ($result === false) {
+            throw new \RuntimeException(
+                "Unable to write Cloudinary log: {$this->logFile}"
+            );
+        }
     }
 }

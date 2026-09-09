@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Database;
 
 use PDO;
@@ -7,8 +9,6 @@ use Exception;
 
 class QueryBuilder
 {
-    protected PDO $db;
-
     protected string $table;
 
     protected array $selects = ['*'];
@@ -27,10 +27,9 @@ class QueryBuilder
 
     protected ?int $offset = null;
 
-    public function __construct(PDO $db)
-    {
-        $this->db = $db;
-    }
+    public function __construct(
+        protected PDO $db
+    ) {}
 
     // =========================================
     // TABLE

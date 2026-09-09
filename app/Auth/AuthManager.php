@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Auth;
 
 use App\Auth\JWT;
@@ -8,9 +10,7 @@ class AuthManager
 {
     public function __construct(
        protected JWT $jwt
-    ) {
-        $this->jwt = $jwt;
-    }
+    ) {}
 
     public function boot(
         array $user

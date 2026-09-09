@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Queue;
 
 use App\Core\Container;
@@ -9,22 +11,14 @@ use App\Models\Jobs;
 
 class QueueWorker extends RedisQueue
 {
-    protected Container $container;
-    protected RedisManager $redis;
-    protected Jobs $jobModel;
-
     public function __construct(
-        Container $container,
+        protected Container $container,
         RedisManager $redis, 
-        Jobs $jobModel
-    )
-    {
+        protected Jobs $jobModel
+    ) {
         parent::__construct(
             $redis->queue()
-        );
-
-        $this->container = $container;
-        $this->jobModel  = $jobModel;
+        );  
     }
 
     // =========================================
@@ -32,7 +26,7 @@ class QueueWorker extends RedisQueue
     // =========================================
     public function run(
         string $queue = 'default'
-    ): void {
+    ): void {   
 
         echo "Worker running on: {$queue}\n";
 
@@ -57,6 +51,8 @@ class QueueWorker extends RedisQueue
                         $queue,
                         json_encode($payload)
                     );
+
+                    sleep(1); // Wait 1 second before checking the queue again
 
                     continue;
                 }

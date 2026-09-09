@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Notification;
 
 use App\Models\Push;
@@ -15,17 +17,16 @@ use App\Models\Push;
  */
 class PushManager
 {
-    protected Push $pushModel;
     private string $serviceKeyPath;
     private string $cacheFile;
     private string $projectId;
 
-    public function __construct(Push $pushModel)
-    {
-        $this->serviceKeyPath = dirname(__DIR__, 2) . '/storage/firebase-key.json';
-        $this->cacheFile      = dirname(__DIR__, 2) . '/storage/fcm-token-cache.json';
+    public function __construct(
+        protected Push $pushModel
+    ) {
+        $this->serviceKeyPath = config('app.base_path', '') . '/storage/firebase-key.json';
+        $this->cacheFile      = config('app.base_path', '') . '/storage/fcm-token-cache.json';
         $this->projectId      = config('firebase.project_id', '');
-        $this->pushModel      = $pushModel;
     }
 
     // =====================================================
@@ -41,7 +42,7 @@ class PushManager
     // =====================================================
     // ACCESS TOKEN (CACHED)
     // ===================================================== 
-    public function getAccessToken(): string
+    private function getAccessToken(): string
     {
         if (file_exists($this->cacheFile)) {
             $cached = json_decode(file_get_contents($this->cacheFile), true);
@@ -138,7 +139,7 @@ class PushManager
         $tokens      = $this->pushModel->getTokens($target, $userId);
 
         if (empty($tokens)) {
-            return;
+            throw new \RuntimeException('No tokens supplied for push notifications.');
         }
 
         $endpoint = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
@@ -190,7 +191,7 @@ class PushManager
             if (isset($response['error']['status'])) {
 
                 if ($response['error']['status'] === 'UNREGISTERED') {
-                    // Deactivate token safely (token-based, not user-based)
+                    // Delete token safely (token-based, not user-based)
                     $this->pushModel->deleteToken($token);
                 }
 
@@ -199,7 +200,7 @@ class PushManager
                     $this->pushModel->deactivateToken($token);
                 }
 
-                $this->logError(
+                $this->writeLog(
                     "Push error [{$response['error']['status']}] for token " .
                     substr(hash('sha256', $token), 0, 12) .
                     ": " . ($response['error']['message'] ?? 'Unknown error')
@@ -213,13 +214,35 @@ class PushManager
     // =====================================================
     // LOG PUSH ERRORS
     // ===================================================== 
-    private function logError(
-        string $message
+    private function writeLog(
+        mixed $data
     ): void {
-        
-        $logFile   = dirname(__DIR__, 2) . '/storage/logs/push-notification.log';
+
         $timestamp = date('Y-m-d H:i:s');
-        
-        error_log("[{$timestamp}] {$message}\n", 3, $logFile);
+
+        $message = is_array($data)
+            ? json_encode($data, JSON_PRETTY_PRINT)
+            : (string) $data;
+
+        $logFile = dirname(__DIR__, 2)
+            . '/storage/logs/push-notification.log';
+
+        $directory = dirname($logFile);
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        $result = file_put_contents(
+            $logFile,
+            "[{$timestamp}] {$message}" . PHP_EOL,
+            FILE_APPEND | LOCK_EX
+        );
+
+        if ($result === false) {
+            throw new \RuntimeException(
+                "Unable to write push notification log: {$logFile}"
+            );
+        }
     }
 }

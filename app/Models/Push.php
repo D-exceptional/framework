@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use PDO;
@@ -8,270 +10,127 @@ class Push extends Model
 {
     protected string $table = 'push_tokens';
 
-    /**
-     * -----------------------------------------
-     * ALLOWED USER TYPES
-     * -----------------------------------------
-     */
-    protected array $allowedUserTypes = [
-        'Admin',
-        'User',
-        'Leader',
-        'Worker',
-        'Dermatologist',
-        'Doctor',
-        'Freelancer',
-        'Lawyer',
-        'Therapist',
-        'Vendor'
-    ];
-
-    // =====================================================
-    // GET PUSH TOKENS
-    // =====================================================
-    public function getTokens(
-        string $targetType = 'All',
+    public function getTokenIds(
+        string $targetType = 'all', 
         ?int $targetId = null
     ): array {
 
-        $targetType = trim(ucwords($targetType));
+        $targetType = ucwords($targetType);
 
-        /**
-         * -----------------------------------------
-         * FETCH ALL ACTIVE TOKENS
-         * -----------------------------------------
-         */
-        if ($targetType === 'All') {
+        switch ($targetType) {
 
-            $stmt = $this->db->prepare(
-                "SELECT token
-                FROM {$this->table}
-                WHERE is_active = 1"
-            );
+            case 'all':
 
-            $stmt->execute();
+                $stmt = $this->db->prepare("
+                    SELECT 
+                        token 
+                    FROM {$table}
+                    WHERE 
+                        is_active = 1
+                ");
 
-            return $stmt->fetchAll(PDO::FETCH_COLUMN);
-        }
+                $stmt->execute();
+                break;
 
-        /**
-         * -----------------------------------------
-         * DETECT SINGLE TARGET MODE
-         * Example:
-         * Single Admin
-         * Single User
-         * -----------------------------------------
-         */
-        // $isSingle = strpos($targetType, 'Single ') === 0; --- IGNORE (For older PHP versions) ---
+            case 'admin':
+            case 'customer':
+            case 'vendor':
 
-        $isSingle = str_starts_with(
-            $targetType,
-            'Single '
-        );
+                $stmt = $this->db->prepare("
+                    SELECT 
+                        token 
+                    FROM {$table}
+                    WHERE 
+                        user_type = ? 
+                        AND is_active = 1
+                ");
 
-        $userType = $isSingle
-            ? str_replace('Single ', '', $targetType)
-            : $targetType;
+                $stmt->execute([$targetType]);
+                break;
 
-        /**
-         * -----------------------------------------
-         * VALIDATE USER TYPE
-         * -----------------------------------------
-         */
-        if (!in_array($userType, $this->allowedUserTypes)) {
-            return [];
-        }
+            case 'single admin':
+            case 'single customer':
+            case 'single vendor':
 
-        /**
-         * -----------------------------------------
-         * FETCH SINGLE USER TOKENS
-         * -----------------------------------------
-         */
-        if ($isSingle) {
+                if ($targetId === null) {
+                    return [];
+                }
 
-            if ($targetId === null) {
+                $userType = str_replace('single ', '', $targetType);
+
+                $stmt = $this->db->prepare("
+                    SELECT 
+                        token 
+                    FROM {$table}
+                    WHERE 
+                        user_type = ? 
+                        AND user_id = ? 
+                        AND is_active = 1
+                ");
+
+                $stmt->execute([$userType, $targetId]);
+                break;
+
+            default:
                 return [];
-            }
-
-            $stmt = $this->db->prepare(
-                "SELECT token
-                FROM {$this->table}
-                WHERE user_type = ?
-                AND user_id = ?
-                AND is_active = 1"
-            );
-
-            $stmt->execute([
-                $userType,
-                $targetId
-            ]);
-
-            return $stmt->fetchAll(PDO::FETCH_COLUMN);
         }
-
-        /**
-         * -----------------------------------------
-         * FETCH TOKENS BY ROLE
-         * -----------------------------------------
-         */
-        $stmt = $this->db->prepare(
-            "SELECT token
-            FROM {$this->table}
-            WHERE user_type = ?
-            AND is_active = 1"
-        );
-
-        $stmt->execute([$userType]);
 
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    // =====================================================
-    // SAVE OR REACTIVATE TOKEN
-    // =====================================================
     public function saveToken(
-        string $token,
-        string $deviceId,
-        int $userId,
+        string $token, 
+        string $deviceId, 
+        int $userId, 
         string $userType
     ): bool {
 
-        /**
-         * -----------------------------------------
-         * VALIDATE TOKEN
-         * -----------------------------------------
-         */
-        if (empty(trim($token))) {
-            return false;
-        }
-
-        /**
-         * -----------------------------------------
-         * VALIDATE DEVICE ID
-         * -----------------------------------------
-         */
-        if (empty(trim($deviceId))) {
-            return false;
-        }
-
-        /**
-         * -----------------------------------------
-         * VALIDATE USER TYPE
-         * -----------------------------------------
-         */
-        $userType = trim(ucwords($userType));
-
-        if (!in_array($userType, $this->allowedUserTypes)) {
-            return false;
-        }
-
-        /**
-         * -----------------------------------------
-         * UPSERT TOKEN
-         * -----------------------------------------
-         */
-        return $this->executeQuery(
-            "
-            INSERT INTO {$this->table}
-            (
-                token,
-                device_id,
-                user_id,
-                user_type,
-                is_active,
-                last_seen
-            )
+        $stmt = $this->db->prepare("
+            INSERT INTO push_tokens (token, device_id, user_id, user_type, is_active, last_seen)
             VALUES (?, ?, ?, ?, 1, NOW())
-
             ON DUPLICATE KEY UPDATE
-
                 token      = VALUES(token),
-                user_id    = VALUES(user_id),
-                user_type  = VALUES(user_type),
                 is_active  = 1,
                 last_seen  = NOW()
-            ",
-            [
-                $token,
-                $deviceId,
-                $userId,
-                $userType
-            ]
-        );
+        ");
+
+        return $stmt->execute([$token, $deviceId, $userId, $userType]);
     }
 
-    // =====================================================
-    // DEACTIVATE TOKEN
-    // =====================================================
     public function deactivateToken(
-        string $token,
+        string $token, 
         ?string $deviceId = null
     ): bool {
 
-        if (empty(trim($token))) {
-            return false;
+        $sql = "
+            UPDATE push_tokens
+            SET 
+                is_active = 0,
+                last_seen = NOW()
+            WHERE 
+                token = ?
+        ";
+
+        $params = [$token];
+
+        if ($deviceId !== null) {
+            $sql .= " AND device_id = ?";
+            $params[] = $deviceId;
         }
 
-        $query = $this->query()
-            ->where('token', '=', $token);
+        $stmt = $this->db->prepare($sql);
 
-        /**
-         * -----------------------------------------
-         * OPTIONAL DEVICE FILTER
-         * -----------------------------------------
-         */
-        if (!empty($deviceId)) {
-
-            $query->where(
-                'device_id',
-                '=',
-                $deviceId
-            );
-        }
-
-        /**
-         * -----------------------------------------
-         * UPDATE TOKEN STATUS
-         * -----------------------------------------
-         */
-        return $query->update([
-            'is_active' => 0,
-            'last_seen' => date('Y-m-d H:i:s')
-        ]);
+        return $stmt->execute($params);
     }
 
-    // =====================================================
-    // DELETE DEAD TOKEN
-    // =====================================================
-    public function deleteToken(
-        string $token
-    ): bool {
+    public function deleteToken(string $token): void
+    {
+        $stmt = $this->db->prepare("
+            DELETE FROM {$table}
+            WHERE 
+                token = ?
+        ");
 
-        if (empty(trim($token))) {
-            return false;
-        }
-
-        return $this->query()
-            ->where('token', '=', $token)
-            ->delete();
-    }
-
-    // =====================================================
-    // CLEANUP OLD INACTIVE TOKENS
-    // =====================================================
-    public function cleanupInactiveTokens(
-        int $days = 30
-    ): bool {
-
-        $days = max(1, $days);
-
-        return $this->executeQuery(
-            "
-            DELETE FROM {$this->table}
-            WHERE is_active = 0
-            AND last_seen < DATE_SUB(NOW(), INTERVAL ? DAY)
-            ",
-            [$days]
-        );
+        $stmt->execute([$token]);
     }
 }

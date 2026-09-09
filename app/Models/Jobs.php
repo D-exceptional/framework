@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 class Jobs extends Model
@@ -111,8 +113,8 @@ class Jobs extends Model
 
         return $this->query()
             ->when(
-                $status &&
-                in_array($status, ['pending', 'processing','completed','failed']),
+                $status
+                && in_array($status, ['pending', 'processing','completed','failed']),
 
                 fn($query) =>
                     $query->where('status', '=', $status)
@@ -131,8 +133,8 @@ class Jobs extends Model
 
         return $this->query()
             ->when(
-                $status && 
-                !is_null($status),
+                $status
+                && !is_null($status),
 
                 fn($query) =>
                     $query->where('status', '=', $status)

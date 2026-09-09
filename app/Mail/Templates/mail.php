@@ -1,5 +1,9 @@
 <?php
-    $hostUrl = in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1']) ? 'http://localhost/projects/demos/jobspot' : 'https://builds.iceiy.com/jobspot';
+
+declare(strict_types=1);
+
+$hostUrl = config('app.base_path', '/projects/showcase/jobspot'); 
+
 ?>
 
 <!DOCTYPE html>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Redis;
 
 use Predis\Client;
@@ -8,9 +10,7 @@ abstract class RedisQueue
 {
     public function __construct(
         protected Client $redis
-    ) {
-        $this->redis = $redis;
-    }
+    ) {}
 
     public function push(
         string $queue,

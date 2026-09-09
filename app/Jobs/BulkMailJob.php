@@ -1,24 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
-use App\Core\Container;
 use App\Contracts\JobInterface;
 use App\Mail\MailManager;
 
 class BulkMailJob implements JobInterface
 {
-    public MailManager $mailer;
-    
     public array $recipients;
     public bool $hasFile;
     public string $type;
 
     public function __construct(
-        MailManager $mailer
-    ) {
-        $this->mailer = $mailer;
-    }
+        public MailManager $mailer
+    ) {}
 
     public function setPayload(array $data): void
     {

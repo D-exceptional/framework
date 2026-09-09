@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Database;
 
 use PDO;
@@ -22,7 +24,7 @@ class Connection
     // =========================================
     protected function connect(): PDO
     {
-        $host = config('database.mysql.host', '127.0.0.1');
+        $host = config('database.mysql.host', 'mysql');
         $db   = config('database.mysql.name', '');
         $user = config('database.mysql.user', '');
         $pass = config('database.mysql.pass', '');

@@ -1,61 +1,93 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core;
 
-use App\Redis\RedisManager;
 use Dotenv\Dotenv;
-use App\Contracts\CacheInterface;
-use App\Contracts\SessionInterface;
-use App\Cache\FileCache;
-use App\Cache\ApcuCache;
-use App\Cache\RedisCache;
-use App\Session\Drivers\FileSessionDriver;
-use App\Session\Drivers\RedisSessionDriver;
 
 class Application
 {
+    /**
+     * Service container.
+     */
     protected Container $container;
+
+    /**
+     * Configuration repository.
+     */
     protected Config $config;
 
+    /**
+     * Registered service providers.
+     */
+    protected array $providers = [];
+
+    /**
+     * Create the application.
+     */
     public function __construct()
     {
         $this->container = new Container();
 
-        // Register container
-        $this->container->instance(Container::class, $this->container);
+        /*
+        |--------------------------------------------------------------------------
+        | Register the application itself
+        |--------------------------------------------------------------------------
+        */
 
-        // Register application itself
-        $this->container->instance(Application::class, $this);
+        $this->container->instance(
+            Container::class,
+            $this->container
+        );
+
+        $this->container->instance(
+            self::class,
+            $this
+        );
     }
 
+    /**
+     * Get the container.
+     */
     public function container(): Container
     {
         return $this->container;
     }
 
+    /**
+     * Get the configuration.
+     */
     public function config(): Config
     {
         return $this->config;
     }
 
-    // =========================================
-    // ENVIRONMENT
-    // =========================================
-    public function loadEnvironment(): void
+    /*
+    |--------------------------------------------------------------------------
+    | Environment
+    |--------------------------------------------------------------------------
+    */
+
+    protected function loadEnvironment(): void
     {
-        $envPath = ROOT_PATH . '/.env';
+        $env = ROOT_PATH . '/.env';
 
-        if (file_exists($envPath)) {
-
-            $dotenv = Dotenv::createImmutable(ROOT_PATH);
-            $dotenv->load();
+        if (!file_exists($env)) {
+            // You can throw an exception here instead because the .env is required for the app to run
+            return;
         }
+
+        Dotenv::createImmutable(ROOT_PATH)->load();
     }
 
-    // =========================================
-    // CONFIGURATION
-    // =========================================
-    public function loadConfiguration(): void
+    /*
+    |--------------------------------------------------------------------------
+    | Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    protected function loadConfiguration(): void
     {
         $this->config = new Config();
 
@@ -67,49 +99,69 @@ class Application
         );
     }
 
-    // =========================================
-    // BINDINGS
-    // =========================================
-    public function registerBindings(): void
-    {
-        // Cache binding
-        $this->container->singleton(
-            CacheInterface::class,
-            function (Container $container) {
+    /*
+    |--------------------------------------------------------------------------
+    | Service Providers
+    |--------------------------------------------------------------------------
+    */
 
-                return match (config('cache.driver', 'file')) {
+    /**
+     * Register a service provider.
+     */
+    public function registerProvider(
+        string $provider
+    ): void {
 
-                    'file'  => $container->get(FileCache::class),
-                    'apcu'  => $container->get(ApcuCache::class),
-                    'redis' => $container->get(RedisCache::class),
-
-                    default => $container->get(FileCache::class)
-                };
-            }
+        $instance = $this->container->make(
+            $provider
         );
 
-        // Session binding
-        $this->container->singleton(
-            SessionInterface::class,
-            function (Container $container) {
+        $instance->register();
 
-                return match (config('session.driver', 'file')) {
-
-                    'redis' => $container->get(RedisSessionDriver::class),
-                    'file'  => $container->get(FileSessionDriver::class),
-
-                    default => $container->get(FileSessionDriver::class)
-                };
-            }
-        );
+        $this->providers[] = $instance;
     }
 
-    // =========================================
-    // BOOT SERVICES
-    // =========================================
-    public function bootServices(): void
+    /**
+     * Register multiple service providers.
+     */
+    public function registerProviders(
+        array $providers
+    ): void {
+
+        foreach ($providers as $provider) {
+
+            $this->registerProvider($provider);
+        }
+    }
+
+    /**
+     * Boot all registered service providers.
+     */
+    public function bootProviders(): void
     {
-        $session = $this->container->get(SessionInterface::class);
-        $session->start();
+        foreach ($this->providers as $provider) {
+
+            $provider->boot();
+        }
+    }
+
+
+    /**
+     * Boot the application.
+     */
+    public function boot(): void
+    {
+        $this->loadEnvironment();
+
+        $this->loadConfiguration();
+
+        $providers = $this->config->get(
+            'providers.providers',
+            []
+        );
+
+        $this->registerProviders($providers);
+
+        $this->bootProviders();
     }
 }

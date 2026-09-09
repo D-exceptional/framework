@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -10,22 +12,15 @@ use App\Models\Notification;
 
 class MailManager
 {
-    protected Mail $mailModel;
-
-    protected Notification $notificationModel;
-
     protected array $smtpConfig = [];
 
     public function __construct(
-        Mail $mailModel,
-        Notification $notificationModel
+        protected Mail $mailModel,
+        protected Notification $notificationModel
     ) {
-        $this->mailModel         = $mailModel;
-        $this->notificationModel = $notificationModel;
-
-        date_default_timezone_set('Africa/Lagos');
-
         $this->smtpConfig = config('mail');
+        
+        date_default_timezone_set('Africa/Lagos');
     }
 
     // =====================================================
@@ -112,11 +107,17 @@ class MailManager
         // Validate email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
-            return $this->report(
+            $error = $this->report(
                 false,
                 'Invalid email address',
                 'INVALID_EMAIL',
                 ['email' => $email]
+            );
+
+            $this->writeLog($error);
+
+            throw new \RuntimeException(
+                "Invalid email address: {$email}"
             );
         }
 
@@ -131,12 +132,16 @@ class MailManager
 
             $mail->send();
 
-            return $this->report(
+            $response = $this->report(
                 true,
                 'Email sent successfully',
                 'MAIL_SENT',
                 ['email' => $email]
             );
+
+            $this->writeLog($response);
+
+            return $response;
 
         } catch (Exception $e) {
 
@@ -147,7 +152,7 @@ class MailManager
                 ['email' => $email]
             );
 
-            $this->logError($error);
+            $this->writeLog($error);
 
             return $error;
 
@@ -160,7 +165,7 @@ class MailManager
                 ['email' => $email]
             );
 
-            $this->logError($error);
+            $this->writeLog($error);
 
             return $error;
         }
@@ -184,9 +189,9 @@ class MailManager
 
             // Attachments
             if (
-                $hasAttachment &&
-                isset($payload['filePath']) &&
-                file_exists($payload['filePath'])
+                $hasAttachment
+                && isset($payload['filePath']) 
+                && file_exists($payload['filePath'])
             ) {
 
                 $mail->addAttachment(
@@ -199,7 +204,7 @@ class MailManager
 
             $mail->send();
 
-            return $this->report(
+            $response = $this->report(
                 true,
                 'Advanced mail sent successfully',
                 'MAIL_SENT',
@@ -207,6 +212,10 @@ class MailManager
                     'email' => $payload['mail_receiver']
                 ]
             );
+
+            $this->writeLog($response);
+
+            return $response;
 
         } catch (Exception $e) {
 
@@ -219,7 +228,7 @@ class MailManager
                 ]
             );
 
-            $this->logError($error);
+            $this->writeLog($error);
 
             return $error;
 
@@ -234,7 +243,7 @@ class MailManager
                 ]
             );
 
-            $this->logError($error);
+            $this->writeLog($error);
 
             return $error;
         }
@@ -244,16 +253,31 @@ class MailManager
     // SEND BULK MAIL
     // =====================================================
     public function sendBulkMail(
-        array $array,
+        array $recipients,
         bool $hasAttachment = false,
         string $type = 'Text'
-    ): array {
-
-        $batches = array_chunk($array, 10);
+    ): void {
 
         $errors = [];
 
         $successful = 0;
+
+        if (count($recipients) === 0) {
+
+            $errors[] = [
+                'type'    => 'SYSTEM_ERROR',
+                'email'   => null,
+                'message' => 'No recipients found'
+            ];
+
+            $this->writeLog($errors);
+
+            throw new \RuntimeException(
+                "No recipients found for this batch mailing process."
+            );
+        }
+
+        $batches = array_chunk($recipients, 10);
 
         foreach ($batches as $index => $batch) {
 
@@ -276,25 +300,6 @@ class MailManager
                         'type'    => 'MAIL_RECORD_ERROR',
                         'email'   => $payload['mail_receiver'],
                         'message' => 'Failed to save mail record'
-                    ];
-
-                    continue;
-                }
-
-                // Save notification
-                $notificationCreated =
-                    $this->notificationModel->create(
-                        'An incoming mail was received',
-                        'New Message',
-                        $payload['userId']
-                    );
-
-                if (!$notificationCreated) {
-
-                    $errors[] = [
-                        'type'    => 'NOTIFICATION_ERROR',
-                        'email'   => $payload['mail_receiver'],
-                        'message' => 'Failed to create notification'
                     ];
 
                     continue;
@@ -334,12 +339,8 @@ class MailManager
             }
         }
 
-        // Log bulk errors
-        if (!empty($errors)) {
-            $this->logError($errors);
-        }
-
-        return [
+        // Log bulk mail operation result
+        $response = [
             'success' => empty($errors),
 
             'message' => empty($errors)
@@ -347,35 +348,49 @@ class MailManager
                 : 'Some mails failed to send',
 
             'summary' => [
-                'total'      => count($array),
+                'total'      => count($recipients),
                 'successful' => $successful,
                 'failed'     => count($errors)
             ],
 
             'errors' => $errors
         ];
+
+        $this->writeLog($response);
     }
 
     // =====================================================
     // LOG MAIL ERRORS
     // =====================================================
-    private function logError(
-        mixed $error
+    private function writeLog(
+        mixed $data
     ): void {
+
+        $timestamp = date('Y-m-d H:i:s');
+
+        $message = is_array($data)
+            ? json_encode($data, JSON_PRETTY_PRINT)
+            : (string) $data;
 
         $logFile = dirname(__DIR__, 2)
             . '/storage/logs/mail-manager.log';
 
-        $timestamp = date('Y-m-d H:i:s');
+        $directory = dirname($logFile);
 
-        $message = is_array($error)
-            ? json_encode($error, JSON_PRETTY_PRINT)
-            : $error;
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
 
-        error_log(
-            "[{$timestamp}] {$message}\n",
-            3,
-            $logFile
+        $result = file_put_contents(
+            $logFile,
+            "[{$timestamp}] {$message}" . PHP_EOL,
+            FILE_APPEND | LOCK_EX
         );
+
+        if ($result === false) {
+            throw new \RuntimeException(
+                "Unable to write mailer log: {$logFile}"
+            );
+        }
     }
 }

@@ -1,15 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
-use App\Core\Container;
 use App\Contracts\JobInterface;
 use App\Notification\PushManager;
 
 class PushNotificationJob implements JobInterface
-{
-    public PushManager $push;
-    
+{    
     public string $target;
     public ?int $userId;
     public string $title;
@@ -17,10 +16,8 @@ class PushNotificationJob implements JobInterface
     public array $data;
 
     public function __construct(
-        PushManager $push
-    ) {
-        $this->push = $push;
-    }
+        public PushManager $push
+    ) {}
 
     public function setPayload(array $data): void
     {

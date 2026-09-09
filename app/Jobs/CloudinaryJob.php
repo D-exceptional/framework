@@ -1,22 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
-use App\Core\Container;
 use App\Contracts\JobInterface;
 use App\Media\CloudinaryManager;
 
 class CloudinaryJob implements JobInterface
 {
-    public CloudinaryManager $cloudinary;
-    
     public string $url;
 
     public function __construct(
-        CloudinaryManager $cloudinary
-    ) {
-        $this->cloudinary = $cloudinary;
-    }
+        public CloudinaryManager $cloudinary
+    ) {}
 
     public function setPayload(array $data): void
     {

@@ -1,27 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Queue;
 
 use App\Redis\RedisManager;
 use App\Redis\RedisQueue;
-use App\Contracts\JobInterface;
 use App\Models\Jobs;
 
 class Queue extends RedisQueue
 {
-    protected RedisManager $redis;
-    protected Jobs $jobModel;
-
     public function __construct(
         RedisManager $redis, 
-        Jobs $jobModel
-    )
-    {
+        protected Jobs $jobModel
+    ) {
         parent::__construct(
             $redis->queue()
         );
-
-        $this->jobModel = $jobModel;
     }
 
     // =========================================

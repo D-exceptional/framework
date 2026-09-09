@@ -1,48 +1,47 @@
 <?php
-    namespace App\Http\Middlewares;
 
-    use App\Http\Request;
-    use App\Validations\Validator;
-    use App\Exceptions\MiddlewareException;
+declare(strict_types=1);
 
-    class ValidationMiddleware
-    {
-        protected Validator $validator;
+namespace App\Http\Middlewares;
 
-        public function __construct(Validator $validator)
-        {
-            $this->validator = $validator;
-        }
+use App\Http\Request;
+use App\Validations\Validator;
+use App\Exceptions\MiddlewareException;
 
-        // =========================================
-        // HANDLE VALIDATIONS
-        // =========================================
-        public function handle(
-            Request $request,
-            callable $next,
-            array $config = []
-        ) {
+class ValidationMiddleware
+{
+    public function __construct(
+        protected Validator $validator
+    ) {}
 
-            // Ensure validation rules exist
-            if (!isset($config['rules'])) {
+    // =========================================
+    // HANDLE VALIDATIONS
+    // =========================================
+    public function handle(
+        Request $request,
+        callable $next,
+        array $config = []
+    ) {
 
-                throw new MiddlewareException(
-                    'Validation rules not provided',
-                    400,
-                    'json'
-                );
-            }
+        // Ensure validation rules exist
+        if (!isset($config['rules'])) {
 
-            // Get normalized request data
-            $data = $request->all();
-
-            // Run validation
-            $this->validator->validate(
-                $data,
-                $config['rules']
+            throw new MiddlewareException(
+                'Validation rules not provided',
+                400
             );
-
-            // Continue middleware pipeline
-            return $next($request);
         }
+
+        // Get normalized request data
+        $data = $request->all();
+
+        // Run validation
+        $this->validator->validate(
+            $data,
+            $config['rules']
+        );
+
+        // Continue middleware pipeline
+        return $next($request);
     }
+}

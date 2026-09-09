@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Database;
 
 use PDO;
@@ -9,11 +11,10 @@ use App\Database\Connection;
 
 class Database
 {
-    protected Connection $connection;
-    protected PDO $db;
-
-    public function __construct(Connection $connection)
-    {
+    public function __construct(
+        protected Connection $connection,
+        protected PDO $db
+    ) {
         $this->db = $connection->getConnection();
     }
 

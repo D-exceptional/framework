@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Auth;
 
 use Exception;
 
-class JWT
+class Jwt
 {
     protected string $secret;
     protected string $algo = 'sha256';
 
     public function __construct()
     {
-        $this->secret = config('jwt.secret'); // Load secret from config
+        $this->secret = config('jwt.secret'); 
     }
 
-    // =========================================
-    // GENERATE JWT TOKEN
-    // =========================================
+    /**
+     * Generate JWT
+     */
     public function generate(
         array $payload
     ): string {
@@ -52,9 +54,9 @@ class JWT
         ]);
     }
 
-    // =========================================
-    // VERIFY JWT TOKEN
-    // =========================================
+    /**
+     * Decode & verify JWT
+     */
     public function verify(
         string $token
     ): array {
@@ -100,9 +102,6 @@ class JWT
         return $payloadData;
     }
 
-    // =========================================
-    // BASE64 URL ENCODE
-    // =========================================
     protected function base64UrlEncode(string $data): string
     {
         return rtrim(
@@ -111,9 +110,6 @@ class JWT
         );
     }
 
-    // =========================================
-    // BASE64 URL DECODE
-    // =========================================
     protected function base64UrlDecode(string $data): string
     {
         return base64_decode(
