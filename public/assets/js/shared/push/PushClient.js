@@ -43,14 +43,12 @@ export default class PushClient {
   /* =====================================================
     PHASE 1: BOOTSTRAP (ONCE PER SESSION)
   ===================================================== */
-  static async bootstrap(dashboard) {
+  static async bootstrap() {
     if (this.initialized) return;
 
     if (!("serviceWorker" in navigator) || !("Notification" in window)) {
       return;
     }
-
-    if (!dashboard) return;
 
     // ----- Ensure Service Worker Is Ready (do NOT register again) ----- //
     this.swRegistration = await navigator.serviceWorker.ready;
@@ -65,27 +63,8 @@ export default class PushClient {
       console.log("[PushClient] Foreground message received");
     });
 
-    // ----- Derive Real State From Permission + Token ----- //
-    switch (dashboard) {
-      case "customer":
-        const isLoggedIn = $(".top-bar").hasClass("logged-in");
-        if (isLoggedIn) {
-          await this.sync(true);
-        }
-        break;
-
-      case "admin":
-      case "vendor":
-        await this.sync(true);
-        break;
-
-      default:
-        const userLoggedIn = $(".top-bar").hasClass("logged-in");
-        if (userLoggedIn) {
-          await this.sync(true);
-        }
-      break;
-    }
+    // ----- Sync State From Permission + Token ----- //
+    await this.sync(true);
 
     this.watchPermission();
     this.toggleButton($(".notification-bell"));

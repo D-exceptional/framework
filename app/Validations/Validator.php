@@ -11,8 +11,11 @@ class Validator
     // =========================================
     // VALIDATE REQUEST DATA AGAINST SET RULES
     // =========================================
-    public function validate(array $data, array $rules): void
-    {
+    public function validate(
+        array $data, 
+        array $rules
+    ): void {
+        
         $errors = [];
 
         foreach ($rules as $field => $fieldRules) {

@@ -17,16 +17,19 @@ use App\Models\Push;
  */
 class PushManager
 {
-    private string $serviceKeyPath;
     private string $cacheFile;
+    private array $firebaseConfig = [];
     private string $projectId;
 
     public function __construct(
         protected Push $pushModel
     ) {
-        $this->serviceKeyPath = config('app.base_path', '') . '/storage/firebase-key.json';
         $this->cacheFile      = config('app.base_path', '') . '/storage/fcm-token-cache.json';
-        $this->projectId      = config('firebase.project_id', '');
+        $this->firebaseConfig = config('firebase');
+        $this->projectId      = $this->firebaseConfig['project_id']
+            ?? throw new \RuntimeException(
+                'Firebase project ID is not configured.'
+            );
     }
 
     // =====================================================
@@ -63,7 +66,7 @@ class PushManager
     // ===================================================== 
     private function generateNewToken(): string
     {
-        $key = json_decode(file_get_contents($this->serviceKeyPath), true);
+        $key = $this->firebaseConfig;
 
         if (!$key || !isset($key['private_key'], $key['client_email'], $key['token_uri'])) {
             throw new \RuntimeException('Invalid Firebase service account key');
@@ -158,9 +161,9 @@ class PushManager
                         'body'  => $body
                     ],
                     'data' => array_merge([
-                        'click_action' => $data['url'] ?? 'https://shop.mrsamase.com',
+                        'click_action' => $data['url'] ?? 'https://yoursite.com',
                         'type'         => $data['type'] ?? 'general',
-                        'icon'         => 'https://shop.mrsamase.com/assets/img/logo-192.png'
+                        'icon'         => 'https://yoursite.com/assets/img/logo-192.png'
                     ], $data)
                 ]
             ];

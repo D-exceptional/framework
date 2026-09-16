@@ -7,17 +7,12 @@ namespace App\Mail;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-use App\Models\Mail;
-use App\Models\Notification;
-
 class MailManager
 {
     protected array $smtpConfig = [];
 
-    public function __construct(
-        protected Mail $mailModel,
-        protected Notification $notificationModel
-    ) {
+    public function __construct() {
+
         $this->smtpConfig = config('mail');
         
         date_default_timezone_set('Africa/Lagos');
@@ -78,7 +73,7 @@ class MailManager
     ): string {
 
         $templatePath = dirname(__DIR__, 2)
-            . "/app/Mail/Templates/mail.php";
+            . "/resources/templates/mail.php";
 
         if (!file_exists($templatePath)) {
             throw new \RuntimeException(
@@ -282,28 +277,6 @@ class MailManager
         foreach ($batches as $index => $batch) {
 
             foreach ($batch as $payload) {
-
-                // Save mail record
-                $mailCreated = $this->mailModel->createMail(
-                    $payload['mail_type'],
-                    $payload['mail_subject'],
-                    $payload['mail_sender'],
-                    $payload['mail_receiver'],
-                    $payload['mail_message'],
-                    $payload['mail_filename'],
-                    $payload['mail_extension']
-                );
-
-                if (!$mailCreated) {
-
-                    $errors[] = [
-                        'type'    => 'MAIL_RECORD_ERROR',
-                        'email'   => $payload['mail_receiver'],
-                        'message' => 'Failed to save mail record'
-                    ];
-
-                    continue;
-                }
 
                 // Send mail
                 $result = $type === 'Text'

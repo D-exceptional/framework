@@ -41,8 +41,8 @@ function normalizePayload(payload = {}) {
   return {
     title: notification.title || data.title || "Notification",
     body: notification.body || data.body || "",
-    icon: data.icon || "/public/assets/img/icons-192.png",
-    badge: data.badge || "/public/assets/img/badge.png",
+    icon: data.icon || "/assets/img/icons-192.png",
+    badge: data.badge || "/assets/img/badge.png",
     click_action: data.click_action || "/login",
     data,
   };
@@ -125,7 +125,7 @@ const CACHE_TIMESTAMP_KEY = "cacheTimestamp";
 
 // Files to cache
 const ASSETS_TO_CACHE = [
-  "/public/assets/js/sweetalert-2.6.0.min.js",
+  "/assets/js/sweetalert-2.6.0.min.js",
   // Add other assets you want to cache here
 ];
 
@@ -196,9 +196,9 @@ self.addEventListener("fetch", (event) => {
 
   // Determine cache strategy based on request URL
   if (
-    requestUrl.pathname.startsWith("/public/assets/css/") ||
-    requestUrl.pathname.startsWith("/public/assets/js/") ||
-    requestUrl.pathname.startsWith("/js/")
+    requestUrl.pathname.startsWith("/assets/css/")
+    || requestUrl.pathname.startsWith("/assets/js/")
+    || requestUrl.pathname.startsWith("/js/")
   ) {
     // Network first strategy
     event.respondWith(

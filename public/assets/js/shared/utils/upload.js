@@ -137,7 +137,7 @@ export function previewFile(input, ruleKey = "image", previewContainer = null) {
     message: `${rule.label} supported (${sizeInMB.toFixed(2)} MB)`,
     type: "success",
     file,
-    cloudinary: rule.cloudinary, // 👈 pass-through
+    cloudinary: rule.cloudinary, 
   };
 }
 
@@ -147,16 +147,17 @@ export function previewFile(input, ruleKey = "image", previewContainer = null) {
 export function uploadToCloudinary(file, folderName) {
 
   const uploadPresets = {
-    documents: "preset_ecommerce_documents",
-    products: "preset_ecommerce_products",
-    shops: "preset_ecommerce_shops",
-    uploads: "preset_ecommerce_uploads",
+    // Define your presets here
+    // For example,
+    documents: "preset_documents",
   };
 
   const preset = uploadPresets[folderName];
   if (!preset) {
-      displayMessage("No upload preset found for this folder", "warning");
-    return Promise.reject("No upload preset found for this folder");
+      displayMessage(`No upload preset found for this folder: ${folderName}`, "warning");
+    return Promise.reject(
+      `No upload preset found for this folder: ${folderName}`,
+    );
   }
 
   const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_NAME}/upload`;

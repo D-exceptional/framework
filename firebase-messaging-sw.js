@@ -34,8 +34,8 @@ function normalizePayload(payload = {}) {
   return {
     title: notification.title || data.title || "Notification",
     body: notification.body || data.body || "",
-    icon: data.icon || "/public/assets/img/logo-192.png",
-    badge: data.badge || "/public/assets/img/badge.png",
+    icon: data.icon || "/assets/img/logo-192.png",
+    badge: data.badge || "/assets/img/badge.png",
     click_action: data.click_action || "/login",
     data,
   };
