@@ -11,7 +11,7 @@ if (!function_exists('app')) {
 
     function app(): Application
     {
-        return $GLOBALS['app'];
+       return Application::getInstance();
     }
 }
 
@@ -34,17 +34,6 @@ if (!function_exists('config')) {
             ->container()
             ->get(Config::class)
             ->get($key, $default);
-    }
-}
-
-if (!function_exists('env')) {
-
-    function env(
-        string $key,
-        mixed $default = null
-    ): mixed {
-
-        return $_ENV[$key] ?? $default;
     }
 }
 
