@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-//use App\Core\Container;
+use App\Core\Container;
 use App\Exceptions\ExceptionHandler;
 use App\Http\Request;
 use App\Http\Response;
@@ -19,7 +19,7 @@ class ExceptionServiceProvider extends ServiceProvider
     {
         $this->container()->singleton(
             ExceptionHandler::class,
-            function ($container) {
+            function (Container $container) {
 
                 return new ExceptionHandler(
                     $container->get(Request::class),
@@ -36,8 +36,7 @@ class ExceptionServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->container()->get(
-            ExceptionHandler::class
-        );
+        container()
+            ->get(ExceptionHandler::class);
     }
 }

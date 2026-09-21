@@ -9,25 +9,21 @@ use App\Events\EventDispatcher;
 
 class EventServiceProvider
 {
-    public function __construct(
-        protected Container $container
-    ) {}
-
     public function register(): void
     {
-        $this->container->singleton(
-            EventDispatcher::class,
-            fn () => new EventDispatcher(
-                $this->container
-            )
-        );
+        container()
+            ->singleton(
+                EventDispatcher::class,
+                fn (Container $container) => new EventDispatcher(
+                    $container
+                )
+            );
     }
 
     public function boot(): void
     {
-        $dispatcher = $this->container->get(
-            EventDispatcher::class
-        );
+        $dispatcher = container()
+            ->get(EventDispatcher::class);
 
         $events = config(
             'events',

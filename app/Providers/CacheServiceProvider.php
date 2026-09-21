@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Core\Container;
 use App\Contracts\CacheInterface;
 use App\Cache\Drivers\ApcuDriver;
 use App\Cache\Drivers\FileDriver;
@@ -17,33 +18,27 @@ class CacheServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->container()->singleton(
-            CacheInterface::class,
-            function ($container) {
+        container()
+            ->singleton(
+                CacheInterface::class,
+                function (Container $container) {
 
-                $driver = config('cache.driver', 'file');
+                    $driver = config('cache.driver', 'file');
 
-                return match ($driver) {
+                    return match ($driver) {
 
-                    'apcu' => $container->get(ApcuDriver::class),
+                        'apcu' => $container->get(ApcuDriver::class),
 
-                    'file' => $container->get(FileDriver::class),
+                        'file' => $container->get(FileDriver::class),
 
-                    'redis' => $container->get(RedisDriver::class),
+                        'redis' => $container->get(RedisDriver::class),
 
-                    default => throw new \RuntimeException(
-                        "Unsupported cache driver [{$driver}]."
-                    ),
-                };
-            }
-        );
-
-        /*
-        $this->container()->singleton(
-            CacheManager::class,
-            CacheManager::class
-        );
-        */
+                        default => throw new \RuntimeException(
+                            "Unsupported cache driver [{$driver}]."
+                        ),
+                    };
+                }
+            );
     }
 
     /**

@@ -587,7 +587,7 @@ class Router
             : (string) $data;
 
         $logFile = dirname(__DIR__, 2)
-            . '/storage/logs/router-error.log';
+            . '/storage/logs/router.log';
 
         $directory = dirname($logFile);
 

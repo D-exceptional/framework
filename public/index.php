@@ -8,8 +8,8 @@ define(
 );
 
 // Enable full error reporting (local development, change both to 0 on production)
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
 
 error_reporting(E_ALL);
 
@@ -22,7 +22,7 @@ use App\Http\Request;
 // ------------------------------------
 // BOOT APPLICATION 
 // ------------------------------------
-$app = require BASE_PATH . '/bootstrap/bootstrap.php';
+$app = require BASE_PATH . '/bootstrap/app.php';
 
 // ------------------------------------
 // LOAD REQUEST CLASS

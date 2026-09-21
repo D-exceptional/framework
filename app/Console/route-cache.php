@@ -24,7 +24,7 @@ use App\Routing\Router;
 |--------------------------------------------------------------------------
 */
 
-require_once BASE_PATH . '/bootstrap/bootstrap.php';
+$app = require_once BASE_PATH . '/bootstrap/app.php';
 
 /*
 |--------------------------------------------------------------------------

@@ -11,15 +11,23 @@ use App\Contracts\CacheInterface;
 
 class ViewServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        container()
+            ->singleton(
+                View::class
+            );
+    }
+    
     public function boot(): void
     {
-        $view = $this->container()
+        $view = container()
             ->get(View::class);
 
-        $session = $this->container()
+        $session = container()
             ->get(SessionInterface::class);
 
-        $cache = $this->container()
+        $cache = container()
             ->get(CacheInterface::class);
 
         // CSRF Token

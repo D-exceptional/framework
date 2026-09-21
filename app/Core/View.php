@@ -44,7 +44,7 @@ class View
         }
 
         // Resolve view directory.
-        $viewPath = config('app.base_path')
+        $viewPath = config('app.url')
             . DIRECTORY_SEPARATOR
             . config('app.display.view_path');
 

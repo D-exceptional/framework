@@ -1,0 +1,96 @@
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 16:57:10] REGISTERING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 16:57:11] BOOTING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 16:57:11] BOOTING COMPLETED FOR App\Providers\CoreServiceProvider
+[2026-09-20 16:57:11] BOOTING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 16:57:11] BOOTING COMPLETED FOR App\Providers\ExceptionServiceProvider
+[2026-09-20 16:57:11] BOOTING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 16:57:13] BOOTING COMPLETED FOR App\Providers\RoutingServiceProvider
+[2026-09-20 16:57:13] BOOTING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 16:57:13] BOOTING COMPLETED FOR App\Providers\CacheServiceProvider
+[2026-09-20 16:57:13] BOOTING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 16:57:16] BOOTING COMPLETED FOR App\Providers\SessionServiceProvider
+[2026-09-20 16:57:16] BOOTING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 16:57:16] BOOTING COMPLETED FOR App\Providers\EventServiceProvider
+[2026-09-20 16:57:16] BOOTING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 16:57:16] VIEW PROVIDER BOOTED
+[2026-09-20 16:57:16] VIEW OBJECT: 131
+[2026-09-20 16:57:16] VIEW RENDER OBJECT: 131
+[2026-09-20 16:57:16] VIEW SHARED BEFORE RENDER: []
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 17:07:16] REGISTERING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 17:07:16] BOOTING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 17:07:16] BOOTING COMPLETED FOR App\Providers\CoreServiceProvider
+[2026-09-20 17:07:16] BOOTING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 17:07:16] BOOTING COMPLETED FOR App\Providers\ExceptionServiceProvider
+[2026-09-20 17:07:16] BOOTING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 17:07:18] BOOTING COMPLETED FOR App\Providers\RoutingServiceProvider
+[2026-09-20 17:07:18] BOOTING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 17:07:18] BOOTING COMPLETED FOR App\Providers\CacheServiceProvider
+[2026-09-20 17:07:18] BOOTING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 17:07:20] BOOTING COMPLETED FOR App\Providers\SessionServiceProvider
+[2026-09-20 17:07:20] BOOTING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 17:07:20] BOOTING COMPLETED FOR App\Providers\EventServiceProvider
+[2026-09-20 17:07:20] BOOTING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 17:07:20] VIEW PROVIDER BOOTED
+[2026-09-20 17:07:20] VIEW OBJECT: 131
+[2026-09-20 17:07:20] VIEW RENDER OBJECT: 131
+[2026-09-20 17:07:20] VIEW SHARED BEFORE RENDER: []
+[2026-09-20 17:09:30] REGISTERING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 17:09:31] REGISTERING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 17:09:31] REGISTERING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 17:09:31] REGISTERING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 17:09:31] REGISTERING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 17:09:31] REGISTERING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 17:09:31] REGISTERING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 17:09:31] BOOTING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 17:09:31] BOOTING COMPLETED FOR App\Providers\CoreServiceProvider
+[2026-09-20 17:09:31] BOOTING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 17:09:31] BOOTING COMPLETED FOR App\Providers\ExceptionServiceProvider
+[2026-09-20 17:09:31] BOOTING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 17:09:34] BOOTING COMPLETED FOR App\Providers\RoutingServiceProvider
+[2026-09-20 17:09:34] BOOTING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 17:09:34] BOOTING COMPLETED FOR App\Providers\CacheServiceProvider
+[2026-09-20 17:09:34] BOOTING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 17:09:36] BOOTING COMPLETED FOR App\Providers\SessionServiceProvider
+[2026-09-20 17:09:36] BOOTING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 17:09:36] BOOTING COMPLETED FOR App\Providers\EventServiceProvider
+[2026-09-20 17:09:36] BOOTING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 17:09:36] VIEW PROVIDER BOOTED
+[2026-09-20 17:09:36] VIEW OBJECT: 131
+[2026-09-20 17:09:38] VIEW RENDER OBJECT: 131
+[2026-09-20 17:09:38] VIEW SHARED BEFORE RENDER: []
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 17:13:46] REGISTERING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 17:13:46] BOOTING PROVIDER: App\Providers\CoreServiceProvider
+[2026-09-20 17:13:46] BOOTING COMPLETED FOR App\Providers\CoreServiceProvider
+[2026-09-20 17:13:46] BOOTING PROVIDER: App\Providers\ExceptionServiceProvider
+[2026-09-20 17:13:46] BOOTING COMPLETED FOR App\Providers\ExceptionServiceProvider
+[2026-09-20 17:13:46] BOOTING PROVIDER: App\Providers\RoutingServiceProvider
+[2026-09-20 17:13:48] BOOTING COMPLETED FOR App\Providers\RoutingServiceProvider
+[2026-09-20 17:13:48] BOOTING PROVIDER: App\Providers\CacheServiceProvider
+[2026-09-20 17:13:48] BOOTING COMPLETED FOR App\Providers\CacheServiceProvider
+[2026-09-20 17:13:48] BOOTING PROVIDER: App\Providers\SessionServiceProvider
+[2026-09-20 17:13:51] BOOTING COMPLETED FOR App\Providers\SessionServiceProvider
+[2026-09-20 17:13:51] BOOTING PROVIDER: App\Providers\EventServiceProvider
+[2026-09-20 17:13:51] BOOTING COMPLETED FOR App\Providers\EventServiceProvider
+[2026-09-20 17:13:51] BOOTING PROVIDER: App\Providers\ViewServiceProvider
+[2026-09-20 17:13:51] VIEW PROVIDER BOOTED
+[2026-09-20 17:13:51] VIEW OBJECT: 131
+[2026-09-20 17:13:51] VIEW RENDER OBJECT: 131
+[2026-09-20 17:13:51] VIEW SHARED BEFORE RENDER: []

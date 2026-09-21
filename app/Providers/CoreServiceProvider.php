@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-//use App\Core\Container;
+use App\Core\Container;
 use App\Core\Kernel;
 use App\Core\View;
 use App\Http\Request;
@@ -24,9 +24,10 @@ class CoreServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->singleton(
-            Request::class
-        );
+        container()
+            ->singleton(
+                Request::class
+            );
 
         /*
         |--------------------------------------------------------------------------
@@ -34,12 +35,13 @@ class CoreServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->bind(
-            Response::class,
-            fn ($container) => new Response(
-                $container->make(View::class)
-            )
-        );
+        container()
+            ->bind(
+                Response::class,
+                fn (Container $container) => new Response(
+                    $container->get(View::class)
+                )
+            );
 
         /*
         |--------------------------------------------------------------------------
@@ -47,9 +49,10 @@ class CoreServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->singleton(
-            ResponseEmitter::class
-        );
+        container()
+            ->singleton(
+                ResponseEmitter::class
+            );
 
         /*
         |--------------------------------------------------------------------------
@@ -57,9 +60,10 @@ class CoreServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->singleton(
-            Kernel::class
-        );
+        container()
+            ->singleton(
+                Kernel::class
+            );
     }
 }
 

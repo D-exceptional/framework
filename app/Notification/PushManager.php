@@ -228,7 +228,7 @@ class PushManager
             : (string) $data;
 
         $logFile = dirname(__DIR__, 2)
-            . '/storage/logs/push-notification.log';
+            . '/storage/logs/push.log';
 
         $directory = dirname($logFile);
 

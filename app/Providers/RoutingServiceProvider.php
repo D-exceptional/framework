@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Core\Container;
 use App\Routing\Router;
 use App\Routing\RouteLoader;
 use App\Routing\UrlGenerator;
@@ -21,9 +22,8 @@ class RoutingServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->singleton(
-            Router::class
-        );
+        container()
+            ->singleton(Router::class);
 
         /*
         |--------------------------------------------------------------------------
@@ -31,9 +31,8 @@ class RoutingServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->singleton(
-            RouteLoader::class
-        );
+        container()
+            ->singleton(RouteLoader::class);
 
         /*
         |--------------------------------------------------------------------------
@@ -41,13 +40,14 @@ class RoutingServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        $this->container()->singleton(
-            UrlGenerator::class,
-            fn ($container) =>
-                new UrlGenerator(
-                    $container->get(Router::class)
-                )
-        );
+        container()
+            ->singleton(
+                UrlGenerator::class,
+                fn (Container $container) =>
+                    new UrlGenerator(
+                        $container->get(Router::class)
+                    )
+            );
     }
 
     /**
@@ -55,7 +55,7 @@ class RoutingServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->container()
+        container()
             ->get(RouteLoader::class)
             ->load();
     }

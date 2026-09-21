@@ -37,7 +37,7 @@ class CloudinaryManager
 
         $this->logFile =
             dirname(__DIR__, 2) .
-            '/storage/logs/media-manager.log';
+            '/storage/logs/media.log';
 
         $this->pemFile =
             dirname(__DIR__, 2) .

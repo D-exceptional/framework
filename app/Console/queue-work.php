@@ -10,7 +10,7 @@ define('BASE_PATH', dirname(__DIR__, 2));
 // =========================================
 // AUTOLOAD & BOOT
 // =========================================
-require_once BASE_PATH . '/bootstrap/bootstrap.php';
+$app = require_once BASE_PATH . '/bootstrap/app.php';
 
 // =========================================
 // IMPORT QUEUE WORKER CLASS
