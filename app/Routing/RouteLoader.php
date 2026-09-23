@@ -8,9 +8,8 @@ class RouteLoader
 {
     public function load(): void
     {
-        $router = app()->container()->get(
-            Router::class
-        );
+        $router = container()
+            ->get(Router::class);
 
         $basePath = dirname( __DIR__, 2);
 
@@ -26,7 +25,7 @@ class RouteLoader
 
         if (file_exists($routeCache)) {
 
-            $router->setRoutes(
+            $router->hydrateRoutes(
                 require $routeCache
             );
 

@@ -26,10 +26,14 @@ require_once ROOT_PATH . '/bootstrap/env.php';
 use App\Core\Application;
 
 // ------------------------------------
-// BOOT APPLICATION
+// CREATE APPLICATION
 // ------------------------------------
 
 $app = new Application();
+
+// ------------------------------------
+// BOOT APPLICATION
+// ------------------------------------
 
 $app->boot();
 

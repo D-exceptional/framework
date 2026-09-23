@@ -46,8 +46,8 @@ class RedisDriver extends RedisStore implements CacheInterface
 
         return (bool) $this->setValue(
             $key,
-            $ttl,
-            json_encode($value)
+            json_encode($value),
+            $ttl
         );
     }
 

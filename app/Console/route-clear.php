@@ -7,7 +7,9 @@ declare(strict_types=1);
 | Define base path
 |--------------------------------------------
 */
-define('BASE_PATH', dirname(__DIR__, 2));
+define('BASE_PATH', 
+    dirname(__DIR__, 2)
+);
 
 $cacheFile = BASE_PATH . '/storage/framework/cache/route/routes.php';
 

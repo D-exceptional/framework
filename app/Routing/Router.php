@@ -94,7 +94,7 @@ class Router
     // =========================================
     // RESTORE CACHED ROUTES INTO ROUTE OBJECTS
     // =========================================
-    public function setRoutes(
+    public function hydrateRoutes(
         array $routes
     ): void {
 
@@ -143,7 +143,7 @@ class Router
     /**
      * Convert registered Route objects into cacheable arrays.
      */
-    public function toCacheArray(): array
+    public function cacheRoutes(): array
     {
         $cached = [];
 

@@ -5,17 +5,19 @@ declare(strict_types=1);
 // =========================================
 // DEFINE BASE PATH
 // =========================================
-define('BASE_PATH', dirname(__DIR__, 2));
-
-// =========================================
-// AUTOLOAD & BOOT
-// =========================================
-$app = require_once BASE_PATH . '/bootstrap/app.php';
+define('BASE_PATH', 
+    dirname(__DIR__, 2)
+);
 
 // =========================================
 // IMPORT QUEUE WORKER CLASS
 // =========================================
 use App\Queue\QueueWorker;
+
+// =========================================
+// AUTOLOAD & BOOT
+// =========================================
+$app = require_once BASE_PATH . '/bootstrap/console.php';
 
 // ===================================================
 // INITIALIZE QUEUE WORKER

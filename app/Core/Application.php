@@ -149,8 +149,10 @@ class Application
     /**
      * Boot the application.
      */
-    public function boot(): void
-    {
+    public function boot(
+        bool $bootProviders = true
+    ): void {
+
         $this->loadEnvironment();
 
         $this->loadConfiguration();
@@ -162,6 +164,8 @@ class Application
 
         $this->registerProviders($providers);
 
-        $this->bootProviders();
+        if ($bootProviders) {
+            $this->bootProviders();
+        }
     }
 }

@@ -98,8 +98,8 @@ abstract class RedisStore
 
     public function rememberValue(
         string $key,
-        int $ttl,
-        callable $callback
+        callable $callback,
+        int $ttl
     ): mixed {
 
         if ($this->keyExists($key)) {
