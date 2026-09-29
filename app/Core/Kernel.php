@@ -6,15 +6,12 @@ namespace App\Core;
 
 use App\Http\Request;
 use App\Http\Response;
-use App\Http\ResponseEmitter;
 use App\Routing\Router;
 
 class Kernel
 {
     public function __construct(
-        protected Router $router,
-        protected Response $response,
-        protected ResponseEmitter $emitter
+        protected Router $router
     ) {}
 
     /**
@@ -22,13 +19,13 @@ class Kernel
      */
     public function handle(
         Request $request
-    ): never {
+    ): Response {
 
         $controllerResponse = $this->router->dispatch(
             $request
         );
 
-        $this->normalizeResponse(
+        return $this->normalizeResponse(
             $controllerResponse
         );
     }
@@ -36,9 +33,9 @@ class Kernel
     /**
      * Normalize controller return values.
      */
-    protected function normalizeResponse(
+    private function normalizeResponse(
         mixed $response
-    ): never {
+    ): Response {
 
         if (!$response instanceof Response) {
             throw new \RuntimeException(
@@ -46,8 +43,6 @@ class Kernel
             );
         }
 
-        $this->emitter->emit(
-            $response
-        );
+        return $response;
     }
 }

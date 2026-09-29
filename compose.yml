@@ -68,9 +68,6 @@ services:
       # If you want fallback, use: ${DB_ROOT_PASSWORD:-__fallback root password__}         
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD} 
 
-    ports:
-      - "3306:3306"
-
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -106,9 +103,6 @@ services:
     restart: unless-stopped
 
     command: redis-server --appendonly yes
-
-    ports:
-      - "6379:6379"
 
     volumes:
       - redis_data:/data
@@ -160,36 +154,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-
-    networks:
-      - framework
-
-  # ==========================================================
-  # EMAIL WORKER
-  # ==========================================================
-
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-
-    container_name: app_worker
-
-    working_dir: /var/www
-
-    command: php queue-work.php __unique worker_name__ --sleep=3 --tries=3
-
-    volumes:
-      - .:/var/www
-
-    depends_on:
-      redis:
-        condition: service_healthy
-
-      mysql:
-        condition: service_healthy
-
-    restart: unless-stopped
 
     networks:
       - framework

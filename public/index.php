@@ -18,6 +18,7 @@ error_reporting(E_ALL);
 // ------------------------------------
 use App\Core\Kernel;
 use App\Http\Request;
+use App\Http\ResponseEmitter;
 
 // ------------------------------------
 // BOOT APPLICATION 
@@ -39,6 +40,18 @@ $kernel = $app
     ->get(Kernel::class);
 
 // ------------------------------------
+// LOAD HTTP RESPONSE EMITTER
+// ------------------------------------
+$emitter = $app
+    ->container()
+    ->get(ResponseEmitter::class);
+
+// ------------------------------------
 // HANDLE INCOMING REQUEST
 // ------------------------------------
-$kernel->handle($request);
+$response = $kernel->handle($request);
+
+// ------------------------------------
+// EMIT RESPONSE TO CLIENT
+// ------------------------------------
+$emitter->emit($response);
