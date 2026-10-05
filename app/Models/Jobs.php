@@ -19,7 +19,7 @@ class Jobs extends Model
         int $delay
     ): int {
 
-        return $this->query()
+        return $this->table()
             ->insertGetId([
                 'queue'        => $queue,
                 'job_class'    => $jobClass,
@@ -38,7 +38,7 @@ class Jobs extends Model
         int $jobId
     ): bool {
 
-        return $this->query()
+        return $this->table()
             ->where('id', '=', $jobId)
             ->update(['status' => 'processing']);
     }
@@ -50,7 +50,7 @@ class Jobs extends Model
         int $jobId
     ): bool {
 
-        return $this->query()
+        return $this->table()
             ->where('id', '=', $jobId)
             ->update([
                 'status'         => 'completed', 
@@ -68,7 +68,7 @@ class Jobs extends Model
         int $attempts
     ): bool {
 
-        return $this->query()
+        return $this->table()
             ->where('id', '=', $jobId)
             ->update([
                 'status'        => 'failed', 
@@ -85,7 +85,7 @@ class Jobs extends Model
         int $jobId
     ): bool {
 
-        return $this->query()
+        return $this->table()
             ->where('id', '=', $jobId)
             ->delete();
     }
@@ -97,7 +97,7 @@ class Jobs extends Model
         int $jobId
     ): ?array {
 
-        return $this->query()
+        return $this->table()
             ->where('id', '=', $jobId)
             ->first();
     }
@@ -111,7 +111,7 @@ class Jobs extends Model
         int $perPage = 20
     ): array {
 
-        return $this->query()
+        return $this->table()
             ->when(
                 $status
                 && in_array($status, ['pending', 'processing','completed','failed']),
@@ -131,7 +131,7 @@ class Jobs extends Model
         ?string $status = null
     ): int {
 
-        return $this->query()
+        return $this->table()
             ->when(
                 $status
                 && !is_null($status),

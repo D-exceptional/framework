@@ -142,6 +142,10 @@ class ExceptionHandler
         Throwable $exception
     ): void {
 
+        if ($exception instanceof RouteNotFoundException) {
+            return;
+        }
+
         $this->writeLog(
             sprintf(
                 "UNCAUGHT EXCEPTION: %s in %s on line %d\n%s",
@@ -174,6 +178,7 @@ class ExceptionHandler
                 $exception->status
             );
         }
+        
 
         /*
          * JSON / API response.
@@ -288,7 +293,7 @@ class ExceptionHandler
          * Default error page. 
          * Could be changed to 500.php or any other error page as needed.
          */
-        $errorFile = ROOT_PATH . '/resources/errors/template.php'; 
+        $errorFile = ROOT_PATH . '/resources/views/errors/template.php'; 
 
         if (!is_file($errorFile)) {
 
@@ -353,15 +358,35 @@ class ExceptionHandler
     ): int {
 
         if ($exception instanceof ValidationException) {
-            return $exception->status;
+            return $exception->status ?? 422;
         }
 
         if ($exception instanceof MiddlewareException) {
-            return $exception->status;
+            return $exception->status ?? 500;
         }
 
         if ($exception instanceof RouteNotFoundException) {
             return 404;
+        }
+
+        if ($exception instanceof RouteNameNotFoundException) {
+            return 404;
+        }
+
+        if ($exception instanceof DuplicateRouteException) {
+            return $exception->status ?? 500;
+        }
+
+        if ($exception instanceof DuplicateRouteNameException) {
+            return $exception->status ?? 500;
+        }
+
+        if ($exception instanceof InvalidRoutePatternException) {
+            return $exception->status ?? 500;
+        }
+
+        if ($exception instanceof MethodNotAllowedException) {
+            return $exception->status ?? 405;
         }
 
         return 500;

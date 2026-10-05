@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middlewares;
 
 use App\Http\Request;
-use App\Redis\RedisManager;
+use App\Redis\Redis;
 use App\Redis\RedisStore;
 use App\Exceptions\MiddlewareException;
 
@@ -15,7 +15,7 @@ class RateLimitMiddleware extends RedisStore
     protected int $window = 60;
 
     public function __construct(
-        RedisManager $redis
+        Redis $redis
     ) {
         parent::__construct(
             $redis->rateLimiter()
@@ -40,7 +40,7 @@ class RateLimitMiddleware extends RedisStore
 
         $count = $this->incrementValue($key, 1);
 
-        // 2. FIX: Prevent the race condition by setting a TTL if none exists
+        // Prevent the race condition by setting a TTL if none exists
         if ($this->getTtl($key) === -1) {
             $this->setExpire($key, $this->window);
         }

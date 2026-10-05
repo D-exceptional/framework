@@ -6,11 +6,11 @@ namespace App\Exceptions;
 
 use Exception;
 
-class RouteNotFoundException extends Exception 
+class MethodNotAllowedException extends Exception 
 {
     public function __construct(
-        string $message = 'Route not found',
-        public int $status = 404
+        string $message = 'Method not allowed',
+        public int $status = 405
     ) {
         parent::__construct($message, $this->status);
     }

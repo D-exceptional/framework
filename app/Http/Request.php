@@ -140,17 +140,6 @@ class Request
     /**
      * Get a route parameter.
      */
-    public function param(
-        string $key, 
-        mixed $default = null
-    ): mixed {
-
-        return $this->routeParams[$key] ?? $default;
-    }
-
-    /**
-     * Get a route parameter.
-     */
     public function route(
         string $key, 
         mixed $default = null
@@ -221,7 +210,7 @@ class Request
             PHP_URL_PATH
         );
 
-        $basePath = rtrim(config('app.base_path', ''), '/');
+        $basePath = rtrim(config('app.url', ''), '/');
 
         if (
             $basePath !== '' &&

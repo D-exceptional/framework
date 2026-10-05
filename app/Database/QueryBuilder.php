@@ -11,21 +11,31 @@ class QueryBuilder
 {
     protected string $table;
 
+    protected ?string $fromSub = null;
+
+    protected array $fromBindings = [];
+
     protected array $selects = ['*'];
 
     protected array $wheres = [];
 
     protected array $joins = [];
 
+    protected array $joinBindings = [];
+
+    protected array $havings = [];
+
     protected array $orders = [];
 
     protected array $groups = [];
 
-    protected array $bindings = [];
-
     protected ?int $limit = null;
 
     protected ?int $offset = null;
+
+    protected bool $lockForUpdate = false;
+
+    protected bool $distinct = false;
 
     public function __construct(
         protected PDO $db
@@ -55,6 +65,13 @@ class QueryBuilder
         return $this;
     }
 
+    public function distinct(): self
+    {
+        $this->distinct = true;
+
+        return $this;
+    }
+
     // =========================================
     // WHERE
     // =========================================
@@ -64,13 +81,11 @@ class QueryBuilder
         string $operator,
         mixed $value
     ): self {
-
         $this->wheres[] = [
-            'boolean'  => 'AND',
-            'condition' => "{$column} {$operator} ?"
+            'boolean' => 'AND',
+            'condition' => "{$column} {$operator} ?",
+            'bindings' => [$value],
         ];
-
-        $this->bindings[] = $value;
 
         return $this;
     }
@@ -80,13 +95,37 @@ class QueryBuilder
         string $operator,
         mixed $value
     ): self {
-
         $this->wheres[] = [
-            'boolean'  => 'OR',
-            'condition' => "{$column} {$operator} ?"
+            'boolean' => 'OR',
+            'condition' => "{$column} {$operator} ?",
+            'bindings' => [$value],
         ];
 
-        $this->bindings[] = $value;
+        return $this;
+    }
+
+    public function whereRaw(
+        string $sql,
+        array $bindings = []
+    ): self {
+        $this->wheres[] = [
+            'boolean' => 'AND',
+            'condition' => $sql,
+            'bindings' => $bindings,
+        ];
+
+        return $this;
+    }
+
+    public function orWhereRaw(
+        string $sql,
+        array $bindings = []
+    ): self {
+        $this->wheres[] = [
+            'boolean' => 'OR',
+            'condition' => $sql,
+            'bindings' => $bindings,
+        ];
 
         return $this;
     }
@@ -95,6 +134,15 @@ class QueryBuilder
         string $column,
         array $values
     ): self {
+        if (empty($values)) {
+            $this->wheres[] = [
+                'boolean' => 'AND',
+                'condition' => '1 = 0',
+                'bindings' => [],
+            ];
+
+            return $this;
+        }
 
         $placeholders = implode(
             ', ',
@@ -103,13 +151,9 @@ class QueryBuilder
 
         $this->wheres[] = [
             'boolean' => 'AND',
-            'condition' => "{$column} IN ({$placeholders})"
+            'condition' => "{$column} IN ({$placeholders})",
+            'bindings' => array_values($values),
         ];
-
-        $this->bindings = array_merge(
-            $this->bindings,
-            $values
-        );
 
         return $this;
     }
@@ -118,6 +162,15 @@ class QueryBuilder
         string $column,
         array $values
     ): self {
+        if (empty($values)) {
+            $this->wheres[] = [
+                'boolean' => 'AND',
+                'condition' => '1 = 1',
+                'bindings' => [],
+            ];
+
+            return $this;
+        }
 
         $placeholders = implode(
             ', ',
@@ -126,36 +179,56 @@ class QueryBuilder
 
         $this->wheres[] = [
             'boolean' => 'AND',
-            'condition' => "{$column} NOT IN ({$placeholders})"
-        ];
-
-        $this->bindings = array_merge(
-            $this->bindings,
-            $values
-        );
-
-        return $this;
-    }
-
-    public function whereNull(
-        string $column
-    ): self {
-
-        $this->wheres[] = [
-            'boolean' => 'AND',
-            'condition' => "{$column} IS NULL"
+            'condition' => "{$column} NOT IN ({$placeholders})",
+            'bindings' => array_values($values),
         ];
 
         return $this;
     }
 
-    public function whereNotNull(
-        string $column
+    public function whereInQuery(
+        string $column,
+        self $query
     ): self {
-
         $this->wheres[] = [
             'boolean' => 'AND',
-            'condition' => "{$column} IS NOT NULL"
+            'condition' => "{$column} IN ({$query->toSql()})",
+            'bindings' => $query->getBindings(),
+        ];
+
+        return $this;
+    }
+
+    public function whereNotInQuery(
+        string $column,
+        self $query
+    ): self {
+        $this->wheres[] = [
+            'boolean' => 'AND',
+            'condition' => "{$column} NOT IN ({$query->toSql()})",
+            'bindings' => $query->getBindings(),
+        ];
+
+        return $this;
+    }
+
+    public function whereNull(string $column): self
+    {
+        $this->wheres[] = [
+            'boolean' => 'AND',
+            'condition' => "{$column} IS NULL",
+            'bindings' => [],
+        ];
+
+        return $this;
+    }
+
+    public function whereNotNull(string $column): self
+    {
+        $this->wheres[] = [
+            'boolean' => 'AND',
+            'condition' => "{$column} IS NOT NULL",
+            'bindings' => [],
         ];
 
         return $this;
@@ -165,7 +238,6 @@ class QueryBuilder
         string $column,
         string $value
     ): self {
-
         return $this->where(
             $column,
             'LIKE',
@@ -177,7 +249,6 @@ class QueryBuilder
         string $column,
         array $values
     ): self {
-
         if (count($values) !== 2) {
             throw new Exception(
                 'whereBetween requires exactly 2 values.'
@@ -186,24 +257,24 @@ class QueryBuilder
 
         $this->wheres[] = [
             'boolean' => 'AND',
-            'condition' => "{$column} BETWEEN ? AND ?"
+            'condition' => "{$column} BETWEEN ? AND ?",
+            'bindings' => [
+                $values[0],
+                $values[1],
+            ],
         ];
-
-        $this->bindings[] = $values[0];
-        $this->bindings[] = $values[1];
 
         return $this;
     }
 
     // =========================================
-    // CONDITIONAL CALLBACKS
+    // CONDITIONAL QUERY
     // =========================================
 
     public function when(
         mixed $condition,
         callable $callback
     ): self {
-
         if ($condition) {
             $callback($this);
         }
@@ -222,7 +293,6 @@ class QueryBuilder
         string $second,
         string $type = 'INNER'
     ): self {
-
         $this->joins[] =
             "{$type} JOIN {$table}
              ON {$first} {$operator} {$second}";
@@ -236,7 +306,6 @@ class QueryBuilder
         string $operator,
         string $second
     ): self {
-
         return $this->join(
             $table,
             $first,
@@ -252,7 +321,6 @@ class QueryBuilder
         string $operator,
         string $second
     ): self {
-
         return $this->join(
             $table,
             $first,
@@ -262,44 +330,69 @@ class QueryBuilder
         );
     }
 
-    // =========================================
-    // ORDERING
-    // =========================================
-
-    public function orderBy(
-        string $column,
-        string $direction = 'ASC'
+    public function joinSub(
+        self $query,
+        string $alias,
+        string $first,
+        string $operator,
+        string $second,
+        string $type = 'INNER'
     ): self {
+        $this->joins[] =
+            "{$type} JOIN ({$query->toSql()}) {$alias}
+             ON {$first} {$operator} {$second}";
 
-        $direction =
-            strtoupper($direction) === 'DESC'
-            ? 'DESC'
-            : 'ASC';
-
-        $this->orders[] =
-            "{$column} {$direction}";
+        $this->joinBindings = array_merge(
+            $this->joinBindings,
+            $query->getBindings()
+        );
 
         return $this;
     }
 
-    public function latest(
-        string $column = 'created_at'
+    public function leftJoinSub(
+        self $query,
+        string $alias,
+        string $first,
+        string $operator,
+        string $second
     ): self {
-
-        return $this->orderBy(
-            $column,
-            'DESC'
+        return $this->joinSub(
+            $query,
+            $alias,
+            $first,
+            $operator,
+            $second,
+            'LEFT'
         );
     }
 
-    public function oldest(
-        string $column = 'created_at'
+    public function rightJoinSub(
+        self $query,
+        string $alias,
+        string $first,
+        string $operator,
+        string $second
     ): self {
-
-        return $this->orderBy(
-            $column,
-            'ASC'
+        return $this->joinSub(
+            $query,
+            $alias,
+            $first,
+            $operator,
+            $second,
+            'RIGHT'
         );
+    }
+
+    public function fromSub(
+        self $query,
+        string $alias
+    ): self {
+        $this->fromSub = "({$query->toSql()}) AS {$alias}";
+
+        $this->fromBindings = $query->getBindings();
+
+        return $this;
     }
 
     // =========================================
@@ -309,7 +402,6 @@ class QueryBuilder
     public function groupBy(
         string|array $columns
     ): self {
-
         $columns = is_array($columns)
             ? $columns
             : [$columns];
@@ -323,22 +415,99 @@ class QueryBuilder
     }
 
     // =========================================
-    // LIMIT & PAGINATION
+    // HAVING
     // =========================================
 
-    public function limit(
-        int $limit
+    public function having(
+        string $column,
+        string $operator,
+        mixed $value
     ): self {
+        $this->havings[] = [
+            'boolean' => 'AND',
+            'condition' => "{$column} {$operator} ?",
+            'bindings' => [$value],
+        ];
 
+        return $this;
+    }
+
+    public function orHaving(
+        string $column,
+        string $operator,
+        mixed $value
+    ): self {
+        $this->havings[] = [
+            'boolean' => 'OR',
+            'condition' => "{$column} {$operator} ?",
+            'bindings' => [$value],
+        ];
+
+        return $this;
+    }
+
+    public function havingRaw(
+        string $sql,
+        array $bindings = []
+    ): self {
+        $this->havings[] = [
+            'boolean' => 'AND',
+            'condition' => $sql,
+            'bindings' => $bindings,
+        ];
+
+        return $this;
+    }
+
+    // =========================================
+    // ORDERING
+    // =========================================
+
+    public function orderBy(
+        string $column,
+        string $direction = 'ASC'
+    ): self {
+        $direction = strtoupper($direction) === 'DESC'
+            ? 'DESC'
+            : 'ASC';
+
+        $this->orders[] =
+            "{$column} {$direction}";
+
+        return $this;
+    }
+
+    public function latest(
+        string $column = 'created_at'
+    ): self {
+        return $this->orderBy(
+            $column,
+            'DESC'
+        );
+    }
+
+    public function oldest(
+        string $column = 'created_at'
+    ): self {
+        return $this->orderBy(
+            $column,
+            'ASC'
+        );
+    }
+
+    // =========================================
+    // LIMIT / OFFSET / PAGINATION
+    // =========================================
+
+    public function limit(int $limit): self
+    {
         $this->limit = $limit;
 
         return $this;
     }
 
-    public function offset(
-        int $offset
-    ): self {
-
+    public function offset(int $offset): self
+    {
         $this->offset = $offset;
 
         return $this;
@@ -348,7 +517,6 @@ class QueryBuilder
         int $page = 1,
         int $limit = 20
     ): self {
-
         $this->limit($limit);
 
         $this->offset(
@@ -359,13 +527,22 @@ class QueryBuilder
     }
 
     // =========================================
+    // LOCKING
+    // =========================================
+
+    public function lockForUpdate(): self
+    {
+        $this->lockForUpdate = true;
+
+        return $this;
+    }
+
+    // =========================================
     // INSERT
     // =========================================
 
-    public function insert(
-        array $data
-    ): bool {
-
+    public function insert(array $data): bool
+    {
         $columns = array_keys($data);
 
         $placeholders = implode(
@@ -373,7 +550,8 @@ class QueryBuilder
             array_fill(0, count($columns), '?')
         );
 
-        $sql = "INSERT INTO {$this->table} (" .
+        $sql =
+            "INSERT INTO {$this->table} (" .
             implode(', ', $columns) .
             ") VALUES ({$placeholders})";
 
@@ -384,10 +562,8 @@ class QueryBuilder
         );
     }
 
-    public function insertGetId(
-        array $data
-    ): int {
-
+    public function insertGetId(array $data): int
+    {
         $this->insert($data);
 
         return (int) $this->db->lastInsertId();
@@ -397,23 +573,22 @@ class QueryBuilder
     // UPDATE
     // =========================================
 
-    public function update(
-        array $data
-    ): bool {
-
+    public function update(array $data): bool
+    {
         $sets = [];
 
         $updateBindings = [];
 
         foreach ($data as $column => $value) {
-
             $sets[] = "{$column} = ?";
 
             $updateBindings[] = $value;
         }
 
-        $sql = "UPDATE {$this->table}
-                SET " . implode(', ', $sets);
+        $sql =
+            "UPDATE {$this->table}
+             SET " .
+            implode(', ', $sets);
 
         $sql .= $this->compileWhere();
 
@@ -422,7 +597,7 @@ class QueryBuilder
         $success = $stmt->execute(
             array_merge(
                 $updateBindings,
-                $this->bindings
+                $this->getBindings()
             )
         );
 
@@ -437,7 +612,22 @@ class QueryBuilder
 
     public function delete(): bool
     {
-        $sql = "DELETE FROM {$this->table}";
+        $sql =
+            "DELETE FROM {$this->table}";
+
+        $sql .= $this->compileWhere();
+
+        $this->execute($sql);
+
+        $this->reset();
+
+        return true;
+    }
+
+    public function deleteCount(): bool
+    {
+        $sql =
+            "DELETE FROM {$this->table}";
 
         $sql .= $this->compileWhere();
 
@@ -456,10 +646,9 @@ class QueryBuilder
         string $column,
         int $amount = 1
     ): bool {
-
-        $sql = "UPDATE {$this->table}
-                SET {$column} =
-                {$column} + {$amount}";
+        $sql =
+            "UPDATE {$this->table}
+             SET {$column} = {$column} + {$amount}";
 
         $sql .= $this->compileWhere();
 
@@ -474,10 +663,9 @@ class QueryBuilder
         string $column,
         int $amount = 1
     ): bool {
-
-        $sql = "UPDATE {$this->table}
-                SET {$column} =
-                {$column} - {$amount}";
+        $sql =
+            "UPDATE {$this->table}
+             SET {$column} = {$column} - {$amount}";
 
         $sql .= $this->compileWhere();
 
@@ -502,7 +690,7 @@ class QueryBuilder
 
         $this->reset();
 
-        return $results;
+        return $results ?? [];
     }
 
     public function first(): ?array
@@ -537,7 +725,6 @@ class QueryBuilder
         int|string $id,
         string $column = 'id'
     ): ?array {
-
         return $this
             ->where($column, '=', $id)
             ->first();
@@ -547,32 +734,61 @@ class QueryBuilder
         int|string $id,
         string $column = 'id'
     ): array {
-
         return $this
             ->where($column, '=', $id)
             ->firstOrFail();
     }
+
+    public function pluck(
+        string $column
+    ): array {
+        $this->select($column);
+
+        $sql = $this->buildQuery();
+
+        $stmt = $this->execute($sql);
+
+        $results = $stmt->fetchAll(
+            PDO::FETCH_COLUMN
+        );
+
+        $this->reset();
+
+        return $results;
+    }
+
+    // =========================================
+    // EXISTENCE / AGGREGATES
+    // =========================================
 
     public function exists(): bool
     {
         return $this->count() > 0;
     }
 
-    // =========================================
-    // AGGREGATES
-    // =========================================
+    public function count(
+        string $column = '*'
+    ): int {
+        $expression = $column === '*'
+            ? 'COUNT(*)'
+            : "COUNT({$column})";
 
-    public function count(): int
-    {
         return (int) $this->aggregate(
-            'COUNT(*)'
+            $expression
+        );
+    }
+
+    public function countDistinct(
+        string $column
+    ): int {
+        return (int) $this->aggregate(
+            "COUNT(DISTINCT {$column})"
         );
     }
 
     public function sum(
         string $column
     ): int|float {
-
         return $this->aggregate(
             "SUM({$column})"
         );
@@ -581,7 +797,6 @@ class QueryBuilder
     public function avg(
         string $column
     ): int|float {
-
         return $this->aggregate(
             "AVG({$column})"
         );
@@ -590,7 +805,6 @@ class QueryBuilder
     public function min(
         string $column
     ): int|float {
-
         return $this->aggregate(
             "MIN({$column})"
         );
@@ -599,7 +813,6 @@ class QueryBuilder
     public function max(
         string $column
     ): int|float {
-
         return $this->aggregate(
             "MAX({$column})"
         );
@@ -608,12 +821,17 @@ class QueryBuilder
     protected function aggregate(
         string $expression
     ): mixed {
+        $sql =
+            "SELECT {$expression} AS aggregate
+             FROM {$this->table}";
 
-        $sql = "SELECT {$expression}
-                as aggregate
-                FROM {$this->table}";
+        $sql .= $this->compileJoin();
 
         $sql .= $this->compileWhere();
+
+        $sql .= $this->compileGroup();
+
+        $sql .= $this->compileHaving();
 
         $stmt = $this->execute($sql);
 
@@ -631,9 +849,7 @@ class QueryBuilder
     public function transaction(
         callable $callback
     ): mixed {
-
         try {
-
             $this->db->beginTransaction();
 
             $result = $callback($this);
@@ -641,17 +857,17 @@ class QueryBuilder
             $this->db->commit();
 
             return $result;
-
         } catch (\Throwable $e) {
-
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
 
             throw $e;
         }
     }
 
     // =========================================
-    // DEBUGGING
+    // SQL / BINDINGS
     // =========================================
 
     public function toSql(): string
@@ -661,24 +877,72 @@ class QueryBuilder
 
     public function getBindings(): array
     {
-        return $this->bindings;
+        $bindings = $this->fromBindings;
+
+        $bindings = array_merge(
+            $bindings,
+            $this->joinBindings
+        );
+
+        foreach ($this->wheres as $where) {
+            $bindings = array_merge(
+                $bindings,
+                $where['bindings'] ?? []
+            );
+        }
+
+        foreach ($this->havings as $having) {
+            $bindings = array_merge(
+                $bindings,
+                $having['bindings'] ?? []
+            );
+        }
+
+        return $bindings;
     }
 
     // =========================================
-    // QUERY COMPILERS
+    // QUERY BUILDING
     // =========================================
 
     protected function buildQuery(): string
     {
-        return "SELECT " .
+        $distinct = $this->distinct
+            ? 'DISTINCT '
+            : '';
+
+        $from = $this->fromSub !== null
+            ? $this->fromSub
+            : $this->table;
+
+        $sql =
+            "SELECT " .
+            $distinct .
             implode(', ', $this->selects) .
-            " FROM {$this->table}" .
-            $this->compileJoin() .
-            $this->compileWhere() .
-            $this->compileOrder() .
-            $this->compileLimit() .
-            $this->compileGroup();
+            " FROM {$from}";
+
+        $sql .= $this->compileJoin();
+
+        $sql .= $this->compileWhere();
+
+        $sql .= $this->compileGroup();
+
+        $sql .= $this->compileHaving();
+
+        $sql .= $this->compileOrder();
+
+        $sql .= $this->compileLimit();
+
+        if ($this->lockForUpdate) {
+            $sql .= " FOR UPDATE";
+        }
+
+        return $sql;
     }
+
+    // =========================================
+    // WHERE COMPILER
+    // =========================================
 
     protected function compileWhere(): string
     {
@@ -688,94 +952,164 @@ class QueryBuilder
 
         $sql = ' WHERE ';
 
-        foreach ($this->wheres as $index => $where) {
-
+        foreach (
+            $this->wheres
+            as $index => $where
+        ) {
             if ($index === 0) {
                 $sql .= $where['condition'];
+
                 continue;
             }
 
             $sql .=
-                " {$where['boolean']}
-                  {$where['condition']}";
+                " {$where['boolean']} " .
+                $where['condition'];
         }
 
         return $sql;
     }
+
+    // =========================================
+    // JOIN COMPILER
+    // =========================================
 
     protected function compileJoin(): string
     {
         return empty($this->joins)
             ? ''
-            : ' ' . implode(' ', $this->joins);
+            : ' ' . implode(
+                ' ',
+                $this->joins
+            );
     }
 
-    protected function compileOrder(): string
-    {
-        return empty($this->orders)
-            ? ''
-            : ' ORDER BY ' .
-                implode(', ', $this->orders);
-    }
-
-    protected function compileLimit(): string
-    {
-        $sql = '';
-
-        if ($this->limit !== null) {
-            $sql .= " LIMIT {$this->limit}";
-        }
-
-        if ($this->offset !== null) {
-            $sql .= " OFFSET {$this->offset}";
-        }
-
-        return $sql;
-    }
+    // =========================================
+    // GROUP COMPILER
+    // =========================================
 
     protected function compileGroup(): string
     {
         return empty($this->groups)
             ? ''
             : ' GROUP BY ' .
-                implode(', ', $this->groups);
+                implode(
+                    ', ',
+                    $this->groups
+                );
+    }
+
+    // =========================================
+    // HAVING COMPILER
+    // =========================================
+
+    protected function compileHaving(): string
+    {
+        if (empty($this->havings)) {
+            return '';
+        }
+
+        $sql = ' HAVING ';
+
+        foreach (
+            $this->havings
+            as $index => $having
+        ) {
+            if ($index === 0) {
+                $sql .= $having['condition'];
+
+                continue;
+            }
+
+            $sql .=
+                " {$having['boolean']} " .
+                $having['condition'];
+        }
+
+        return $sql;
+    }
+
+    // =========================================
+    // ORDER COMPILER
+    // =========================================
+
+    protected function compileOrder(): string
+    {
+        return empty($this->orders)
+            ? ''
+            : ' ORDER BY ' .
+                implode(
+                    ', ',
+                    $this->orders
+                );
+    }
+
+    // =========================================
+    // LIMIT / OFFSET COMPILER
+    // =========================================
+
+    protected function compileLimit(): string
+    {
+        $sql = '';
+
+        if ($this->limit !== null) {
+            $sql .=
+                " LIMIT {$this->limit}";
+        }
+
+        if ($this->offset !== null) {
+            $sql .=
+                " OFFSET {$this->offset}";
+        }
+
+        return $sql;
     }
 
     // =========================================
     // EXECUTION
     // =========================================
 
-    protected function execute(
-        string $sql
-    )
+    protected function execute(string $sql)
     {
         $stmt = $this->db->prepare($sql);
 
-        $stmt->execute($this->bindings);
+        $stmt->execute(
+            $this->getBindings()
+        );
 
         return $stmt;
     }
 
     // =========================================
-    // RESET STATE
+    // RESET
     // =========================================
 
     protected function reset(): void
     {
         $this->selects = ['*'];
 
+        $this->distinct = false;
+
+        $this->fromSub = null;
+
+        $this->fromBindings = [];
+
         $this->wheres = [];
 
         $this->joins = [];
 
-        $this->orders = [];
+        $this->joinBindings = [];
 
-        $this->bindings = [];
+        $this->havings = [];
+
+        $this->orders = [];
 
         $this->groups = [];
 
         $this->limit = null;
 
         $this->offset = null;
+
+        $this->lockForUpdate = false;
     }
 }

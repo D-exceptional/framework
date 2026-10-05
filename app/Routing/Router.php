@@ -117,27 +117,6 @@ class Router
         return $this->collections;
     }
 
-
-    // =========================================
-    // URI NORMALIZATION
-    // =========================================
-    /*private function normalizeUri(
-        string $uri
-    ): string {
-
-        $path = parse_url(
-            $uri,
-            PHP_URL_PATH
-        ) ?: '/';
-
-        $path = '/' . trim($path, '/');
-
-        return $path === '/'
-            ? '/'
-            : rtrim($path, '/') ?: '/';
-    }*/
-
-
     // =========================================
     // NAMED ROUTES
     // =========================================
@@ -624,8 +603,7 @@ class Router
         Request $request
     ): Response {
 
-        $uri = $request->uri();
-
+        $uri    = $request->uri();
         $method = $request->method();
 
         $collection = $this->resolveCollection(

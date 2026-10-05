@@ -60,20 +60,10 @@ foreach ($routeCollections as $collection) {
         continue;
     }
 
-    $router->setCollection($collection);
-
-    require $file;
+    $router->loadCollection($collection, $file);
 
     $totalCollections++;
 }
-
-/*
-|--------------------------------------------------------------------------
-| Reset Active Collection Tracker
-|--------------------------------------------------------------------------
-*/
-
-$router->resetCollection();
 
 
 /*

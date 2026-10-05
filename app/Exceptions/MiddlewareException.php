@@ -7,16 +7,19 @@ namespace App\Exceptions;
 use Exception;
 
 class MiddlewareException extends Exception 
-{
-    public int $status;
-
+{    
     public function __construct(
-        string $message = 'Blocked by middleware',
-        int $status = 403,
+        string $message = 'Request blocked by middleware',
+        public int $status = 403,
+        public ?string $action = null, 
+        public ?string $redirect = null,
         protected array $headers = []
     ) {
-        parent::__construct($message, $status);
-        $this->status   = $status;
-        $this->headers  = $headers;
+        parent::__construct($message, $this->status);
+    }
+
+    public function headers(): array
+    {
+        return $this->headers;
     }
 }

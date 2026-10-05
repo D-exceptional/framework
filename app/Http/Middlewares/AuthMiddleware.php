@@ -18,25 +18,44 @@ class AuthMiddleware
     // HANDLE AUTH CHECK
     // =========================================
     public function handle(
-        Request $request, 
-        callable $next, 
+        Request $request,
+        callable $next,
         array $config = []
     ) {
+        /*
+         * Determine the authentication role.
+         */
+        $role = $config['role'] ?? 'user';
 
+        /*
+         * Validate the current session.
+         */
         $isValidSession = $this->session->validate();
+
         if (!$isValidSession) {
-            throw new MiddlewareException('Unauthorized', 401);
+
+            $loginPath = config(
+                "auth.{$role}.login"
+            );
+
+            if (!$loginPath) {
+                throw new MiddlewareException(
+                    "No login path configured for authentication role `{$role}`.",
+                    500
+                );
+            }
+
+            throw new MiddlewareException(
+                'Unauthorized',
+                401,
+                action: 'redirect',
+                redirect: $loginPath
+            );
         }
 
-        // User is authenticated 
-        // Set the authenticated user in the request object
-        // Continue to next middleware or controller
-        $user = $this->session->user();
-        if ($user) {
-            $request->setUser($user);
-        }
-
-        // Continue pipeline
+        /*
+         * Continue pipeline.
+         */
         return $next($request);
     }
 }
