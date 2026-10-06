@@ -674,11 +674,14 @@ class Router
                     $matches
                 ) === 1
             ) {
-                $params = array_filter(
-                    $matches,
-                    'is_string',
-                    ARRAY_FILTER_USE_KEY
-                );
+                
+                $params = [];
+
+                foreach ($matches as $key => $value) {
+                    if (is_string($key)) {
+                        $params[$key] = urldecode($value);
+                    }
+                }
 
                 return $this->runRoute(
                     $route,
